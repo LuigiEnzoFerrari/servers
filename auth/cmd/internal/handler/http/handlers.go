@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
 func SignUp(c *gin.Context) {
-	c.JSON(http.StatusCreated, gin.H{"message": "user created"})
+	handler_service.SignUp(c)
 }
 
 func Login(c *gin.Context) {
@@ -21,5 +22,3 @@ func Logout(c *gin.Context) {
 func Refresh(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "user refreshed"})
 }
-
-
