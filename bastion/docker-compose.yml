@@ -1,0 +1,6 @@
+services:
+  bastion:
+    build: .
+    container_name: bastion
+    ports:
+      - "2222:22"
