@@ -1,19 +1,17 @@
 package main
 
 import (
-	"net/http"
-
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/handler/http"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	engine := gin.Default()
 
-	engine.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"message": "Hello World!",
-		})
-	})
+	engine.POST("/signup", handlers.SignUp)
+	engine.POST("/login", handlers.Login)
+	engine.POST("/logout", handlers.Logout)
+	engine.POST("/refresh", handlers.Refresh)
 
 	engine.Run(":8080")
 }
