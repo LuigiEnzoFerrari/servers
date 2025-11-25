@@ -1,4 +1,4 @@
-package handler_service
+package service
 
 import (
 	// "github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/repository"
@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"net/http"
-
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/model"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/argon2"
 )
@@ -28,7 +28,19 @@ var defaultParams = &argon2Params{
 	keyLength:   32,
 }
 
-func SignUp(c *gin.Context) {
+type userRepository interface {
+	Save(user *model.User) error
+}
+
+type UserService struct {
+	repo userRepository
+}
+
+func NewUserService(repo userRepository) *UserService {
+	return &UserService{repo: repo}
+}
+
+func (s *UserService) SignUp(c *gin.Context) {
 	type requestBody struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -40,9 +52,18 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	
-	_, err := createHash(req.Password, defaultParams)
+	encodedHash, err := createHash(req.Password, defaultParams)
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	user := &model.User{
+		Username:     req.Username,
+		PasswordHash: encodedHash,
+	}
+
+	if err := s.repo.Save(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
