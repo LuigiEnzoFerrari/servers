@@ -15,16 +15,10 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-
-	userRepo := repository.NewUserRepository(db)
-
+	userRepo := repository.NewPostgresUserRepository(db)
 	userService := service.NewUserService(userRepo)
-
-
 	handler := handlers.NewHandler(userService)
-
 	engine := gin.Default()
-
 	engine.POST("/signup", handler.SignUp)
 	engine.POST("/login", handler.Login)
 	engine.POST("/logout", handler.Logout)

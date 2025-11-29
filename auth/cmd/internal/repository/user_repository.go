@@ -1,20 +1,28 @@
 package repository
 
 import (
-	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/model"
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/domain"
 	"gorm.io/gorm"
 )
 
 
-type UserRepository struct {
+type PostgresUserRepository struct {
 	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewPostgresUserRepository(db *gorm.DB) *PostgresUserRepository {
+	return &PostgresUserRepository{db: db}
 }
 
-func (r *UserRepository) Save(user *model.User) error {
+func (r *PostgresUserRepository) Save(user *domain.User) error {
 	user.BeforeCreate()
 	return r.db.Create(user).Error
+}
+
+func (r *PostgresUserRepository) FindByUsername(username string) (*domain.User, error) {
+	var user domain.User
+	if err := r.db.Where("username = ?", username).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
