@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/handler/http"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
-	"gorm.io/driver/postgres"
+	handlers "github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/handler/http"
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/middleware"
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/repository"
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/service"
+	"github.com/gin-gonic/gin"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -17,12 +18,18 @@ func main() {
 	}
 	userRepo := repository.NewPostgresUserRepository(db)
 	userService := service.NewUserService(userRepo)
+	jwtService := service.NewJwtService()
 	handler := handlers.NewHandler(userService)
+	authMiddleware := middleware.NewAuthMiddleware(jwtService)
+
 	engine := gin.Default()
 	engine.POST("/signup", handler.SignUp)
 	engine.POST("/login", handler.Login)
 	engine.POST("/logout", handler.Logout)
-	engine.POST("/refresh", handler.Refresh)
+
+	protected := engine.Group("/")
+	protected.Use(authMiddleware.AuthMiddleware())
+	protected.POST("/protected", handler.Protected)
 
 	engine.Run(":8080")
 }

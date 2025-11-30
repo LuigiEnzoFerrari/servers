@@ -8,10 +8,12 @@ import (
 	"fmt"
 	"net/http"
 
+	"strings"
+
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/domain"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/argon2"
-	"strings"
 )
 
 type argon2Params struct {
@@ -140,11 +142,27 @@ func (s *UserService) Login(c *gin.Context, password string, username string) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
-	
+
 	if ok, err := ComparePasswordAndHash(password, user.PasswordHash); err != nil || !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "user signed in"})
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": user.Username,
+	})
+
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"token": tokenString})
 }
 
+
+func (s *UserService) Protected(c *gin.Context) {
+
+	c.JSON(http.StatusOK, gin.H{"message": "protected"})
+}

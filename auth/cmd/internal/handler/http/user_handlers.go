@@ -46,6 +46,6 @@ func (h *handler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "user signed out"})
 }
 
-func (h *handler) Refresh(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "user refreshed"})
+func (h *handler) Protected(c *gin.Context) {
+	h.service.Protected(c)
 }
