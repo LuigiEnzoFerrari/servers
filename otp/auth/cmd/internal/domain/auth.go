@@ -1,9 +1,28 @@
 package domain
 
-import "gorm.io/gorm"
+import (
+	"time"
+	"github.com/google/uuid"
+)
 
 type Auth struct {
-	gorm.Model
-	Username string
+	Id uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Email string `gorm:"unique;not null"`
+	PasswordHash string `gorm:"not null"`
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+type AuthRepository interface {
+	Save(auth *Auth) error
+}
+
+type AuthRequestDTO struct {
+	Email string
 	Password string
+}
+
+func (u *Auth) BeforeCreate() (err error) {
+    u.Id = uuid.New()
+    return
 }
