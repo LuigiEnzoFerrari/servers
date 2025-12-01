@@ -15,6 +15,7 @@ type Auth struct {
 
 type AuthRepository interface {
 	Save(auth *Auth) error
+	FindByEmail(email string) (*Auth, error)
 }
 
 type AuthRequestDTO struct {

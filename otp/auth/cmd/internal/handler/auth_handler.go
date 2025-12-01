@@ -10,10 +10,11 @@ import (
 
 type AuthHandler struct {
 	authService *service.AuthService
+	jwtService *service.JwtService
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService *service.AuthService, jwtService *service.JwtService) *AuthHandler {
+	return &AuthHandler{authService: authService, jwtService: jwtService}
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -38,5 +39,31 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 	
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusOK, gin.H{})
+}
+
+func (h *AuthHandler) Login(c *gin.Context) {
+	type LoginRequest struct {
+		Email string `json:"email" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+
+	var req LoginRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.authService.Login(req.Email, req.Password); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if token, err := h.jwtService.GenerateToken(req.Email); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	} else {
+		c.JSON(http.StatusOK, gin.H{"token": token})
+	}
+	
 }

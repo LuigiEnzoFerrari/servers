@@ -17,3 +17,11 @@ func (r *PostgresAuthRepository) Save(user *domain.Auth) error {
 	user.BeforeCreate()
 	return r.db.Create(user).Error
 }
+
+func (r *PostgresAuthRepository) FindByEmail(email string) (*domain.Auth, error) {
+	var user domain.Auth
+	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

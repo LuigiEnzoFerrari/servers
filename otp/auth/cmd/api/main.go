@@ -5,6 +5,7 @@ import (
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/repository"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/service"
+
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/handler"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,13 +21,15 @@ func main() {
 	}
 
 	repository := repository.NewAuthRepository(db)
-	service := service.NewAuthService(repository)
-	authHandler := handler.NewAuthHandler(service)
+	authService := service.NewAuthService(repository)
+	jwtService := service.NewJwtService()
+	authHandler := handler.NewAuthHandler(authService, jwtService)
 
 	gin := gin.Default()
 	api := gin.Group("/api/v1/auth")
 	
 	api.POST("/register", authHandler.Register)
+	api.POST("/login", authHandler.Login)
 
 	fmt.Println("Server started on :8080")
 	gin.Run(":8080")
