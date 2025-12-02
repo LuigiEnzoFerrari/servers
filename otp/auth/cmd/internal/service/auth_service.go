@@ -9,15 +9,17 @@ import (
 	"strings"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/domain"
+	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/publish"
 	"golang.org/x/crypto/argon2"
 )
 
 type AuthService struct {
 	authRepository domain.AuthRepository
+	authPublish *publish.AuthPublish
 }
 
-func NewAuthService(authRepository domain.AuthRepository) *AuthService {
-	return &AuthService{authRepository: authRepository}
+func NewAuthService(authRepository domain.AuthRepository, authPublish *publish.AuthPublish) *AuthService {
+	return &AuthService{authRepository: authRepository, authPublish: authPublish}
 }
 
 type argon2Params struct {
@@ -78,14 +80,14 @@ func (s *AuthService) Login(email string, password string) error {
 		return err
 	}
 
-	if ok, err := ComparePasswordAndHash(password, user.PasswordHash); err != nil || !ok {
+	if ok, err := comparePasswordAndHash(password, user.PasswordHash); err != nil || !ok {
 		return err
 	}
 
 	return nil
 }
 
-func ComparePasswordAndHash(password, encodedHash string) (bool, error) {
+func comparePasswordAndHash(password, encodedHash string) (bool, error) {
 	p, salt, hash, err := decodeHash(encodedHash)
 	if err != nil {
 		return false, err
@@ -133,4 +135,15 @@ func decodeHash(encodedHash string) (p *argon2Params, salt, hash []byte, err err
 	p.keyLength = uint32(len(hash))
 
 	return p, salt, hash, nil
+}
+
+func (s *AuthService) ForgotPassword(email string) error {
+	_, err := s.authRepository.FindByEmail(email)
+	if err != nil {
+		return err
+	}
+
+	s.authPublish.Publish()
+
+	return nil
 }

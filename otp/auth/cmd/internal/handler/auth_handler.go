@@ -67,3 +67,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	}
 	
 }
+
+func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+	type ForgotPasswordRequest struct {
+		Email string `json:"email" binding:"required"`
+	}
+
+	var req ForgotPasswordRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := h.authService.ForgotPassword(req.Email); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{})
+}

@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 
+	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/publish"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/repository"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/service"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/handler"
+	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"github.com/gin-gonic/gin"
 )
 
 
@@ -21,7 +22,8 @@ func main() {
 	}
 
 	repository := repository.NewAuthRepository(db)
-	authService := service.NewAuthService(repository)
+	authPublish := publish.NewAuthPublish()
+	authService := service.NewAuthService(repository, authPublish)
 	jwtService := service.NewJwtService()
 	authHandler := handler.NewAuthHandler(authService, jwtService)
 
@@ -30,6 +32,7 @@ func main() {
 	
 	api.POST("/register", authHandler.Register)
 	api.POST("/login", authHandler.Login)
+	api.POST("/forgot", authHandler.ForgotPassword)
 
 	fmt.Println("Server started on :8080")
 	gin.Run(":8080")
