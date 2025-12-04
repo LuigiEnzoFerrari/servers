@@ -1,4 +1,4 @@
-module cmd/api/main.go
+module github.com/LuigiEnzoFerrari/servers/otp/otp
 
 go 1.25.3
 

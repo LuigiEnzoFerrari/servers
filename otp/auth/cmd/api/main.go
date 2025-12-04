@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/publish"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/repository"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/service"
+	"github.com/nats-io/nats.go"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/handler"
 	"github.com/gin-gonic/gin"
@@ -21,8 +22,13 @@ func main() {
 		panic("failed to connect database")
 	}
 
+	nc, err := nats.Connect("nats://localhost:4222")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer nc.Drain()
 	repository := repository.NewAuthRepository(db)
-	authPublish := publish.NewAuthPublish()
+	authPublish := publish.NewAuthPublish(nc)
 	authService := service.NewAuthService(repository, authPublish)
 	jwtService := service.NewJwtService()
 	authHandler := handler.NewAuthHandler(authService, jwtService)
@@ -33,7 +39,5 @@ func main() {
 	api.POST("/register", authHandler.Register)
 	api.POST("/login", authHandler.Login)
 	api.POST("/forgot", authHandler.ForgotPassword)
-
-	fmt.Println("Server started on :8080")
 	gin.Run(":8080")
 }

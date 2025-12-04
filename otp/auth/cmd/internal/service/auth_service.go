@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
@@ -9,16 +10,15 @@ import (
 	"strings"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/domain"
-	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/publish"
 	"golang.org/x/crypto/argon2"
 )
 
 type AuthService struct {
 	authRepository domain.AuthRepository
-	authPublish *publish.AuthPublish
+	authPublish domain.AuthPublish
 }
 
-func NewAuthService(authRepository domain.AuthRepository, authPublish *publish.AuthPublish) *AuthService {
+func NewAuthService(authRepository domain.AuthRepository, authPublish domain.AuthPublish) *AuthService {
 	return &AuthService{authRepository: authRepository, authPublish: authPublish}
 }
 
@@ -137,13 +137,15 @@ func decodeHash(encodedHash string) (p *argon2Params, salt, hash []byte, err err
 	return p, salt, hash, nil
 }
 
-func (s *AuthService) ForgotPassword(email string) error {
+func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
 	_, err := s.authRepository.FindByEmail(email)
 	if err != nil {
 		return err
 	}
 
-	s.authPublish.Publish()
+	if err := s.authPublish.Publish(ctx, domain.PasswordForgotEvent{Email: email}); err != nil {
+		return err
+	}
 
 	return nil
 }

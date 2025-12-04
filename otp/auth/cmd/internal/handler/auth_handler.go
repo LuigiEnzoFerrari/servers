@@ -79,7 +79,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	if err := h.authService.ForgotPassword(req.Email); err != nil {
+	if err := h.authService.ForgotPassword(c.Request.Context(), req.Email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
