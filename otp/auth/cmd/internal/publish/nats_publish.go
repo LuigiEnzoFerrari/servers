@@ -6,15 +6,14 @@ import (
 	"log"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/domain"
-	"github.com/nats-io/nats.go"
 )
 
 type AuthPublish struct {
-	nc *nats.Conn
+	
 }
 
-func NewAuthPublish(nc *nats.Conn) *AuthPublish {
-	return &AuthPublish{nc: nc}
+func NewAuthPublish() *AuthPublish {
+	return &AuthPublish{}
 }
 
 func (p *AuthPublish) Publish(ctx context.Context, event domain.PasswordForgotEvent) error {

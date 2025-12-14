@@ -1,0 +1,26 @@
+services:
+    rabbitmq:
+        build: .
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        environment:
+            - RABBITMQ_DEFAULT_USER=admin
+            - RABBITMQ_DEFAULT_PASS=secret
+        healthcheck:
+            test: [ "CMD", "rabbitmqctl", "status" ]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    terraform-setup:
+        image: hashicorp/terraform:latest
+        working_dir: /app
+        volumes:
+            - ./terraform:/app
+        environment:
+            - TF_VAR_rabbitmq_endpoint=http://rabbitmq:15672
+        # This command initializes and applies the config automatically
+        entrypoint: [ "sh", "-c", "terraform init && terraform apply -auto-approve" ]
+        depends_on:
+            rabbitmq:
+                condition: service_healthy

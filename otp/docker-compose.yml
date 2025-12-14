@@ -11,22 +11,18 @@ services:
     volumes:
       - ./auth-database/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
-  nats:
-    image: nats:latest
-    # "-js" enables JetStream. "-sd" sets the storage directory.
-    command: "-js -m 8222 -sd /data"
+  rabbitmq:
+    image: rabbitmq:4.2.1-management
+    container_name: rabbitmq
     ports:
-      - "4222:4222" # Client port
-      - "8222:8222" # HTTP Monitoring dashboard
-    volumes:
-      - ./nats_data:/data
-  nats-box:
-    image: natsio/nats-box:latest
-    depends_on:
-      - nats
-    command: 
-      - /bin/sh
-      - -c
-      - "sleep infinity"
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI (HTTP)
     environment:
-      - NATS_URL=nats://nats:4222
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: secret
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
