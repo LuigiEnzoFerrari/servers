@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
+	"log"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/publish"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/repository"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/service"
+	"github.com/LuigiEnzoFerrari/servers/otp/auth/internal/config"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/handler"
 	"github.com/gin-gonic/gin"
@@ -12,10 +15,10 @@ import (
 	"gorm.io/gorm"
 )
 
-
 func main() {
+	cfg := config.Load()
 
-	db, err := gorm.Open(postgres.Open("host=localhost user=admin password=pass dbname=auth port=5433 sslmode=disable"), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(cfg.Database.DSN()), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -28,9 +31,14 @@ func main() {
 
 	gin := gin.Default()
 	api := gin.Group("/api/v1/auth")
-	
+
 	api.POST("/register", authHandler.Register)
 	api.POST("/login", authHandler.Login)
 	api.POST("/forgot", authHandler.ForgotPassword)
-	gin.Run(":8080")
+
+	serverAddr := fmt.Sprintf(":%s", cfg.Server.Port)
+	log.Printf("Starting server on %s", serverAddr)
+	if err := gin.Run(serverAddr); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
 }
