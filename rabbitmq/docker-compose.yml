@@ -19,7 +19,6 @@ services:
             - ./terraform:/app
         environment:
             - TF_VAR_rabbitmq_endpoint=http://rabbitmq:15672
-        # This command initializes and applies the config automatically
         entrypoint: [ "sh", "-c", "terraform init && terraform apply -auto-approve" ]
         depends_on:
             rabbitmq:

@@ -14,6 +14,9 @@ services:
     depends_on:
       auth-postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
     restart: unless-stopped
   auth-postgres:
     image: postgres:latest
@@ -33,11 +36,11 @@ services:
       timeout: 5s
       retries: 5
   rabbitmq:
-    image: rabbitmq:4.2.1-management
+    build: ./rabbitmq
     container_name: rabbitmq
     ports:
-      - "5672:5672"   # AMQP protocol
-      - "15672:15672" # Management UI (HTTP)
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: admin
       RABBITMQ_DEFAULT_PASS: secret
@@ -47,3 +50,13 @@ services:
       timeout: 5s
       retries: 5
 
+  terraform:
+    image: hashicorp/terraform:latest
+    container_name: terraform
+    volumes:
+      - ./terraform:/app
+    working_dir: /app
+    entrypoint: [ "sh", "-c", "terraform init && terraform apply -auto-approve" ]
+    depends_on:
+      rabbitmq:
+        condition: service_healthy

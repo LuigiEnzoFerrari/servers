@@ -1,18 +1,16 @@
 package domain
 
 import (
-	"context"
 	"time"
-
 	"github.com/google/uuid"
 )
 
 type Auth struct {
-	Id uuid.UUID `gorm:"type:uuid;primaryKey"`
-	Email string `gorm:"unique;not null"`
-	PasswordHash string `gorm:"not null"`
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+	Id           uuid.UUID `gorm:"type:uuid;primaryKey"`
+	Email        string    `gorm:"unique;not null"`
+	PasswordHash string    `gorm:"not null"`
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime"`
 }
 
 type AuthRepository interface {
@@ -21,19 +19,19 @@ type AuthRepository interface {
 }
 
 type AuthRequestDTO struct {
-	Email string
+	Email    string
 	Password string
 }
 
 func (u *Auth) BeforeCreate() (err error) {
-    u.Id = uuid.New()
-    return
+	u.Id = uuid.New()
+	return
 }
 
 type PasswordForgotEvent struct {
-	Email string
+	Email string 
 }
 
 type AuthPublish interface {
-	Publish(ctx context.Context, event PasswordForgotEvent) error
+	PublishPasswordForgotEvent(event PasswordForgotEvent) error
 }

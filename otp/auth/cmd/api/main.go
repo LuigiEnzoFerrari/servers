@@ -13,18 +13,23 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"github.com/rabbitmq/amqp091-go"
 )
 
 func main() {
 	cfg := config.Load()
-
+	log.Println(cfg.Database.DSN())
 	db, err := gorm.Open(postgres.Open(cfg.Database.DSN()), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
+	conn, err := amqp091.Dial(cfg.RabbitMQ.URL())
+	if err != nil {
+		panic("failed to connect to RabbitMQ")
+	}
 
 	repository := repository.NewAuthRepository(db)
-	authPublish := publish.NewAuthPublish()
+	authPublish := publish.NewRabbitMQPublish(conn)
 	authService := service.NewAuthService(repository, authPublish)
 	jwtService := service.NewJwtService()
 	authHandler := handler.NewAuthHandler(authService, jwtService)

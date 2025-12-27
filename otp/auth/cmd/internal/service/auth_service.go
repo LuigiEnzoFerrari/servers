@@ -18,8 +18,14 @@ type AuthService struct {
 	authPublish domain.AuthPublish
 }
 
-func NewAuthService(authRepository domain.AuthRepository, authPublish domain.AuthPublish) *AuthService {
-	return &AuthService{authRepository: authRepository, authPublish: authPublish}
+func NewAuthService(
+	authRepository domain.AuthRepository,
+	authPublish domain.AuthPublish,
+) *AuthService {
+	return &AuthService{
+		authRepository: authRepository,
+		authPublish: authPublish,
+	}
 }
 
 type argon2Params struct {
@@ -143,7 +149,8 @@ func (s *AuthService) ForgotPassword(ctx context.Context, email string) error {
 		return err
 	}
 
-	if err := s.authPublish.Publish(ctx, domain.PasswordForgotEvent{Email: email}); err != nil {
+	passwordForgotEvent := domain.PasswordForgotEvent{Email: email}
+	if err := s.authPublish.PublishPasswordForgotEvent(passwordForgotEvent); err != nil {
 		return err
 	}
 
