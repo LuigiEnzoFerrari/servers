@@ -7,6 +7,7 @@ import (
 	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/rabbitmq/amqp091-go"
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/smtp"
 )
 
 func main() {
@@ -16,12 +17,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	service := service.NewOptService()
+
+	smtpService := smtp.NewMailHogService("localhost", "1025", "test@example.com", "secret")
+
+	service := service.NewOptService(smtpService)
 	rabbitMQConsumer := consumer.NewRabbitMQConsumer(conn, []consumer.ConsumerConfig{
 		{
 			QueueName:   "otp.passwordforgot",
 			WorkerCount: 1,
-			Handler:     service.GenerateOTP,
+			Handler:     service.SendOTPEmail,
 		},
 	})
 	ctx := context.Background()
