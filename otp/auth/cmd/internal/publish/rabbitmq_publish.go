@@ -2,6 +2,7 @@ package publish
 
 import (
 	"encoding/json"
+	"log"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -40,5 +41,6 @@ func (p *RabbitMQPublish) Publish(routingKey string, event interface{}) error {
 }
 
 func (p *RabbitMQPublish) PublishPasswordForgotEvent(event domain.PasswordForgotEvent) error {
+	log.Println("Publishing password forgot event")
 	return p.Publish("passwordforgot", event)
 }

@@ -67,4 +67,8 @@ services:
       - "1025:1025" # SMTP port (The one your Go app talks to)
       - "8025:8025" # Web UI port (The one you view in your browser)
     restart: always
-
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"

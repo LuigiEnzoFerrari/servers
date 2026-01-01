@@ -40,7 +40,6 @@ func (m *RabbitMQConsumer) Start(ctx context.Context) {
 
 func (m *RabbitMQConsumer) startConsumer(ctx context.Context, cfg ConsumerConfig) {
 	defer m.wg.Done()
-
 	ch, err := m.conn.Channel()
 	if err != nil {
 		log.Printf("Failed to open channel for %s: %v", cfg.QueueName, err)
@@ -75,6 +74,7 @@ func (m *RabbitMQConsumer) startConsumer(ctx context.Context, cfg ConsumerConfig
 			if !ok {
 				return
 			}
+			log.Printf("Received message for %s: %s", cfg.QueueName, string(d.Body))
 
 			sem <- struct{}{}
 			
