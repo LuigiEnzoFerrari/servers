@@ -12,24 +12,31 @@ import (
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/handler"
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/config"
 	
 )
 
 func main() {
 
-	conn, err := amqp091.Dial("amqp://admin:secret@localhost:5672/dev")
+	cfg := config.Load()
+	conn, err := amqp091.Dial(cfg.RabbitMQ.URL())
 	if err != nil {
 		panic(err)
 	}
 	log.Println("Connected to RabbitMQ")
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     cfg.Redis.Host + ":" + cfg.Redis.Port,
+		Password: cfg.Redis.Password,
 		DB:       0,
 	})
 
-	smtpService := smtp.NewMailHogService("localhost", "1025", "test@example.com", "secret")
+	smtpService := smtp.NewMailHogService(
+		cfg.Smtp.Host,
+		cfg.Smtp.Port,
+		cfg.Smtp.Sender,
+		cfg.Smtp.Password,
+	)
 
 	otpRepository := repository.NewRedisOtpRepository(redisClient)
 
@@ -49,5 +56,5 @@ func main() {
 	api := r.Group("/api/v1")
 	api.POST("/otp/validation", optHandler.VerifyOTP)
 
-	r.Run(":8081")
+	r.Run(":" + cfg.Server.Port)
 }

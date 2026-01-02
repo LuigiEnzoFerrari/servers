@@ -7,7 +7,7 @@ import (
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/publish"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/repository"
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/service"
-	"github.com/LuigiEnzoFerrari/servers/otp/auth/internal/config"
+	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/config"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/auth/cmd/internal/handler"
 	"github.com/gin-gonic/gin"
@@ -18,7 +18,6 @@ import (
 
 func main() {
 	cfg := config.Load()
-	log.Println(cfg.Database.DSN())
 	db, err := gorm.Open(postgres.Open(cfg.Database.DSN()), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")

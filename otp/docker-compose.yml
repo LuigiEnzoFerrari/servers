@@ -9,6 +9,12 @@ services:
       DB_NAME: ${DB_NAME}
       DB_PORT: 5432
       DB_SSL_MODE: disable
+      SERVER_PORT: 8080
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
     ports:
       - "8080:8080"
     depends_on:
@@ -16,7 +22,33 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-
+    restart: unless-stopped
+  otp:
+    build: ./otp
+    container_name: otp
+    ports:
+      - "8081:8080"
+    environment:
+      SERVER_PORT: 8080
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_SENDER: ${SMTP_SENDER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      RABBITMQ_HOST: ${RABBITMQ_HOST}
+      RABBITMQ_PORT: ${RABBITMQ_PORT}
+      RABBITMQ_USER: ${RABBITMQ_USER}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      otp-redis:
+        condition: service_healthy
+      mailhog:
+        condition: service_healthy
     restart: unless-stopped
   auth-postgres:
     image: postgres:latest
@@ -25,13 +57,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "${POSTGRES_PORT}:5432"
     volumes:
       - ./auth-database/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,11 +69,10 @@ services:
     build: ./rabbitmq
     container_name: rabbitmq
     ports:
-      - "5672:5672"
       - "15672:15672"
     environment:
-      RABBITMQ_DEFAULT_USER: admin
-      RABBITMQ_DEFAULT_PASS: secret
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 10s
@@ -53,6 +82,9 @@ services:
   terraform:
     image: hashicorp/terraform:latest
     container_name: terraform
+    environment:
+      TF_VAR_rabbitmq_user: ${RABBITMQ_USER}
+      TF_VAR_rabbitmq_password: ${RABBITMQ_PASSWORD}
     volumes:
       - ./terraform:/app
     working_dir: /app
@@ -64,11 +96,21 @@ services:
     image: mailhog/mailhog
     container_name: mailhog
     ports:
-      - "1025:1025" # SMTP port (The one your Go app talks to)
-      - "8025:8025" # Web UI port (The one you view in your browser)
+      - "8025:8025" # Web UI port
     restart: always
-  redis:
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8025/api/v2/messages"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  otp-redis:
     image: redis:latest
-    container_name: redis
+    container_name: otp-redis
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

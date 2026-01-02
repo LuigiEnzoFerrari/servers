@@ -6,7 +6,7 @@ import (
 )
 
 type MailHogService struct {
-	auth smtp.Auth
+	auth smtp.Auth // Just for production
 	host string
 	port string
 	senderEmail string
@@ -38,7 +38,7 @@ func (s *MailHogService) SendOTP(toEmail string, otpCode string) error {
 
 	msg := []byte(subject + mime + body)
 
-	err := smtp.SendMail(addr, s.auth, s.senderEmail, []string{toEmail}, msg)
+	err := smtp.SendMail(addr, nil, s.senderEmail, []string{toEmail}, msg)
 	if err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}

@@ -7,10 +7,20 @@ terraform {
   }
 }
 
+variable "rabbitmq_user" {
+  type      = string
+  sensitive = true
+}
+
+variable "rabbitmq_password" {
+  type      = string
+  sensitive = true
+}
+
 provider "rabbitmq" {
   endpoint = "http://rabbitmq:15672"
-  username = "admin"
-  password = "secret"
+  username = var.rabbitmq_user
+  password = var.rabbitmq_password
 }
 
 resource "rabbitmq_vhost" "dev" {
