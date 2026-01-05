@@ -1,0 +1,8 @@
+{
+  "user_id": "12345",
+  "available_balance": 150.75,
+  "currency": "USD",
+  "status": "ACTIVE",
+  "last_updated": "2023-10-27T10:05:00Z",
+  "blocked_amount": 0.00
+}
