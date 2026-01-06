@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
@@ -8,17 +9,24 @@ import (
 )
 
 type DashboardService struct {
-	
+	orderGateway domain.OrderGateway
 }
 
-func NewDashboardService() *DashboardService {
-	return &DashboardService{}
+func NewDashboardService(orderGateway domain.OrderGateway) *DashboardService {
+	return &DashboardService{
+		orderGateway: orderGateway,
+	}
 }
 
 func (s *DashboardService) GetDashboardSummary() (*dto.DashboardSummaryResponse, error) {
 
+	orders, err := s.orderGateway.GetOrdersByUserID(context.Background(), "12345")
+	if err != nil {
+		return nil, err
+	}
+
 	response := dto.DashboardSummaryResponse{
-		UserID:           "12345",
+		UserID:           orders.Data[0].OrderID,
 		AvailableBalance: 100.0,
 		Currency:         "USD",
 		Status:           "ACTIVE",

@@ -25,7 +25,6 @@ func NewDashboardHandler(
 }
 
 func (h *DashboardHandler) GetDashboardSummary(c *gin.Context) {
-
 	dashboardSummaryResponse, err := h.dashboardService.GetDashboardSummary()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -46,6 +45,5 @@ func (h *DashboardHandler) UpdateSomething(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, updateSomethingResponse)
 }
