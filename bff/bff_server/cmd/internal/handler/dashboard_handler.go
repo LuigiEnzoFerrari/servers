@@ -1,10 +1,9 @@
 package handler
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
+	"github.com/gin-gonic/gin"
 	"net/http"
-	
 )
 
 type DashboardServiceInterface interface {

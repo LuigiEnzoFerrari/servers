@@ -11,7 +11,8 @@ import (
 
 func main() {
 	httpOrderGateway := infrastructure.NewHttpOrderGateway("http://localhost:8081/api/v1")
-	dashboardService := service.NewDashboardService(httpOrderGateway)
+	httpUserGateway := infrastructure.NewHttpUserGateway("http://localhost:8082/api/v1")
+	dashboardService := service.NewDashboardService(httpOrderGateway, httpUserGateway)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 
 	server := gin.Default()

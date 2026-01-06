@@ -2,8 +2,6 @@ package dto
 
 import "time"
 
-
-
 type GetOrdersByUserIDResponse struct {
 	Count int     `json:"count"`
 	Data  []Order `json:"data"`

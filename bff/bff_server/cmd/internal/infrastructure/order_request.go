@@ -1,7 +1,6 @@
-package domain
+package infrastructure
 
 import (
-	"context"
 	"time"
 )
 
@@ -25,6 +24,3 @@ type OrderItem struct {
 	UnitPrice float64 `json:"unit_price"`
 }
 
-type OrderGateway interface {
-	GetOrdersByUserID(ctx context.Context, userID string) (*GetOrdersByUserIDResponse, error)
-}
