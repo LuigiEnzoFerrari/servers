@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package wallet.v1;
+
+option go_package = "github.com/LuigiEnzoFerrari/servers/bff/bff_server/api/proto/wallet/v1;walletv1";
+
+import "google/protobuf/timestamp.proto";
+
+service WalletService {
+  rpc GetBalance (GetUserBalanceRequest) returns (UserBalanceResponse);
+}
+
+message GetUserBalanceRequest {
+  string user_id = 1;
+}
+
+// If a field can be nil use optional
+
+message UserBalanceResponse {
+  string user_id = 1;
+  double available_balance = 2; 
+  string currency = 3;
+  UserStatus status = 4;
+  google.protobuf.Timestamp last_updated = 5;
+  double blocked_amount = 6;
+}
+
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_SUSPENDED = 2;
+  USER_STATUS_CLOSED = 3;
+}
+

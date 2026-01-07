@@ -10,3 +10,4 @@ type DashboardSummaryResponse struct {
     LastUpdated      time.Time `json:"last_updated"` 
     BlockedAmount    float64   `json:"blocked_amount"`
 }
+
