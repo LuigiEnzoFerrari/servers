@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/service"
 )
 
 type HttpUserGateway struct {
@@ -22,13 +24,13 @@ func NewHttpUserGateway(baseUrl string) *HttpUserGateway {
 	
 }
 
-func (h *HttpUserGateway) GetUsersByUserID(ctx context.Context, userID string) (*GetUserByUserIDResponse, error) {
+func (h *HttpUserGateway) GetUsersByUserID(ctx context.Context, userID string) (*service.GetUserByUserIDResponse, error) {
     resp, err := h.client.Get(h.baseUrl + "/users/" + userID)
     if err != nil {
         return nil, err
     }
     defer resp.Body.Close()
-    var data GetUserByUserIDResponse
+    var data service.GetUserByUserIDResponse
     if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
         return nil, err
     }

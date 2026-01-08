@@ -3,10 +3,9 @@ package service
 import (
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
-	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/infrastructure"
 )
 
-func mapOrdersResponseToOrders(response *infrastructure.GetOrdersByUserIDResponse) []domain.Order {
+func mapOrdersResponseToOrders(response *GetOrdersByUserIDResponse) []domain.Order {
 	orders := make([]domain.Order, len(response.Data))
 	for i, order := range response.Data {
 		orders[i] = domain.Order{
@@ -21,7 +20,7 @@ func mapOrdersResponseToOrders(response *infrastructure.GetOrdersByUserIDRespons
 	return orders
 }
 
-func mapOrderItems(items []infrastructure.OrderItem) []domain.OrderItem {
+func mapOrderItems(items []OrderItem) []domain.OrderItem {
 	orderItems := make([]domain.OrderItem, len(items))
 	for i, item := range items {
 		orderItems[i] = domain.OrderItem{
@@ -34,7 +33,7 @@ func mapOrderItems(items []infrastructure.OrderItem) []domain.OrderItem {
 }
 
 
-func mapWalletResponseToWallet(response *infrastructure.GetUserBalanceResponse) domain.Wallet {
+func mapWalletResponseToWallet(response *GetUserBalanceResponse) domain.Wallet {
 	return domain.Wallet{
 		AvailableBalance: response.AvailableBalance,
 		Currency:         response.Currency,
@@ -44,7 +43,7 @@ func mapWalletResponseToWallet(response *infrastructure.GetUserBalanceResponse) 
 	}
 }
 
-func mapUserResponseToUser(response *infrastructure.GetUserByUserIDResponse) domain.User {
+func mapUserResponseToUser(response *GetUserByUserIDResponse) domain.User {
 	return domain.User{
 		UserID:           response.UserID,
 		Status:           response.Status,

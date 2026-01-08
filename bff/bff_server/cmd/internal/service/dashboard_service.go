@@ -5,19 +5,18 @@ import (
 
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
-	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/infrastructure"
 )
 
 type OrderGateway interface {
-	GetOrdersByUserID(ctx context.Context, userID string) (*infrastructure.GetOrdersByUserIDResponse, error)
+	GetOrdersByUserID(ctx context.Context, userID string) (*GetOrdersByUserIDResponse, error)
 }
 
 type UserGateway interface {
-	GetUsersByUserID(ctx context.Context, userID string) (*infrastructure.GetUserByUserIDResponse, error)
+	GetUsersByUserID(ctx context.Context, userID string) (*GetUserByUserIDResponse, error)
 }
 
 type WalletGateway interface {
-	GetBalance(ctx context.Context, userID string) (*infrastructure.GetUserBalanceResponse, error)
+	GetBalance(ctx context.Context, userID string) (*GetUserBalanceResponse, error)
 }
 
 type DashboardService struct {
