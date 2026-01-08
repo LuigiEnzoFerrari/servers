@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/LuigiEnzoFerrari/servers/bff/user_server/cmd/internal/dto"
 	"github.com/gin-gonic/gin"
@@ -33,5 +34,6 @@ func (h *UserHandler) GetUsersByUserID(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	time.Sleep(5 * time.Second)
 	c.JSON(http.StatusOK, user)
 }

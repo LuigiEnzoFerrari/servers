@@ -5,6 +5,7 @@ import (
 	"log"
 	pb "github.com/LuigiEnzoFerrari/servers/bff/wallet_server/api/proto/v1"
 	"github.com/LuigiEnzoFerrari/servers/bff/wallet_server/cmd/internal/domain"
+	"time"
 )
 
 type WalletUseCase interface {
@@ -28,5 +29,6 @@ func (s *WalletHandler) GetBalance(ctx context.Context, req *pb.GetUserBalanceRe
 		return nil, err
 	}
 
+	time.Sleep(3 * time.Second)
 	return MapWalletBalanceToProto(balance), nil
 }

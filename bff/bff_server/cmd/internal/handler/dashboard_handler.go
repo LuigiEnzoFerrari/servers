@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
 	"github.com/gin-gonic/gin"
@@ -28,7 +29,7 @@ func NewDashboardHandler(
 
 func (h *DashboardHandler) GetDashboardSummary(c *gin.Context) {
 	userID := c.Param("userId")
-	log.Println("userID: ", userID)
+	start := time.Now()
 	if userID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
 		return
@@ -39,6 +40,7 @@ func (h *DashboardHandler) GetDashboardSummary(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+	log.Println("Time taken: ", time.Since(start))
 	c.JSON(http.StatusOK, dashboardSummaryResponse)
 }
 
