@@ -30,7 +30,7 @@ func main() {
 
 	server := gin.Default()
 	group := server.Group("/api/v1")
-	group.GET("/dashboard-summary", dashboardHandler.GetDashboardSummary)
+	group.GET("/dashboard-summary/:userId", dashboardHandler.GetDashboardSummary)
 	
 	server.Run(":8080")
 }

@@ -1,14 +1,17 @@
 package handler
 
 import (
+	"context"
+	"log"
+	"net/http"
+
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type DashboardServiceInterface interface {
-	UpdateSomething(request *dto.UpdateSomethingRequest) (*dto.UpdateSomethingResponse, error)
-	GetDashboardSummary() (*dto.DashboardSummaryResponse, error)
+	UpdateSomething(ctx context.Context, request *dto.UpdateSomethingRequest) (*dto.UpdateSomethingResponse, error)
+	GetDashboardSummary(ctx context.Context, userID string) (*dto.DashboardSummaryResponse, error)
 }
 
 type DashboardHandler struct {
@@ -24,7 +27,14 @@ func NewDashboardHandler(
 }
 
 func (h *DashboardHandler) GetDashboardSummary(c *gin.Context) {
-	dashboardSummaryResponse, err := h.dashboardService.GetDashboardSummary()
+	userID := c.Param("userId")
+	log.Println("userID: ", userID)
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "userId is required"})
+		return
+	}
+	ctx := c.Request.Context()
+	dashboardSummaryResponse, err := h.dashboardService.GetDashboardSummary(ctx, userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -33,13 +43,14 @@ func (h *DashboardHandler) GetDashboardSummary(c *gin.Context) {
 }
 
 func (h *DashboardHandler) UpdateSomething(c *gin.Context) {
+	ctx := c.Request.Context()
 	updateSomethingRequest := dto.UpdateSomethingRequest{}
 	if err := c.ShouldBindJSON(&updateSomethingRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	updateSomethingResponse, err := h.dashboardService.UpdateSomething(&updateSomethingRequest)
+	updateSomethingResponse, err := h.dashboardService.UpdateSomething(ctx, &updateSomethingRequest)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
