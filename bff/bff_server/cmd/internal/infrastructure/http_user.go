@@ -22,13 +22,13 @@ func NewHttpUserGateway(baseUrl string) *HttpUserGateway {
 	
 }
 
-func (h *HttpUserGateway) GetUsersByUserID(ctx context.Context, userID string) (*GetUsersByUserIDResponse, error) {
+func (h *HttpUserGateway) GetUsersByUserID(ctx context.Context, userID string) (*GetUserByUserIDResponse, error) {
     resp, err := h.client.Get(h.baseUrl + "/users/" + userID)
     if err != nil {
         return nil, err
     }
     defer resp.Body.Close()
-    var data GetUsersByUserIDResponse
+    var data GetUserByUserIDResponse
     if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
         return nil, err
     }

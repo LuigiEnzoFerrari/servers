@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type GetUsersByUserIDResponse struct {
+type GetUserByUserIDResponse struct {
 	UserID       string       `json:"user_id"`
 	Status       string       `json:"status"`
 	CreatedAt    time.Time    `json:"created_at"`

@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"time"
 
+	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/infrastructure"
 )
@@ -13,7 +13,7 @@ type OrderGateway interface {
 }
 
 type UserGateway interface {
-	GetUsersByUserID(ctx context.Context, userID string) (*infrastructure.GetUsersByUserIDResponse, error)
+	GetUsersByUserID(ctx context.Context, userID string) (*infrastructure.GetUserByUserIDResponse, error)
 }
 
 type WalletGateway interface {
@@ -40,42 +40,34 @@ func NewDashboardService(
 
 func (s *DashboardService) GetDashboardSummary() (*dto.DashboardSummaryResponse, error) {
 
-	orders, err := s.orderGateway.GetOrdersByUserID(context.Background(), "12345")
+	ordersResponse, err := s.orderGateway.GetOrdersByUserID(context.Background(), "12345")
 	if err != nil {
 		return nil, err
 	}
 
-	users, err := s.userGateway.GetUsersByUserID(context.Background(), "12345")
+	orders := mapOrdersResponseToOrders(ordersResponse)
+
+	usersResponse, err := s.userGateway.GetUsersByUserID(context.Background(), "12345")
 	if err != nil {
 		return nil, err
 	}
+	users := mapUserResponseToUser(usersResponse)
 	
 	balance, err := s.walletGateway.GetBalance(context.Background(), "12345")
 	if err != nil {
 		return nil, err
 	}
-	response := dto.DashboardSummaryResponse{
-		UserID:           users.UserID,
-		AvailableBalance: balance.AvailableBalance,
-		Currency:         orders.Data[0].Currency,
-		Status:           mapWalletStatusToDashboardStatus(balance.Status),
-		LastUpdated:      time.Now(),
-		BlockedAmount:    0.0,
-	}
-	return &response, nil
-}
+	wallet := mapWalletResponseToWallet(balance)
 
-func mapWalletStatusToDashboardStatus(status infrastructure.WalletStatus) string {
-	switch status {
-	case infrastructure.WalletStatusActive:
-		return "ACTIVE"
-	case infrastructure.WalletStatusSuspended:
-		return "SUSPENDED"
-	case infrastructure.WalletStatusClosed:
-		return "CLOSED"
-	default:
-		return "UNSPECIFIED"
+	dashboardSummary := domain.DashboardSummary{
+		Orders: orders,
+		User: users,
+		Wallet: wallet,
 	}
+
+	response := mapDashboardSummaryToDashboardSummaryResponse(&dashboardSummary)
+
+	return response, nil
 }
 
 func (s *DashboardService) UpdateSomething(request *dto.UpdateSomethingRequest) (*dto.UpdateSomethingResponse, error) {
