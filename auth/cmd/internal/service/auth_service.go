@@ -1,17 +1,17 @@
 package service
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"net/http"
+	"time"
 
 	"strings"
 
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/domain"
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/argon2"
 )
@@ -32,31 +32,66 @@ var defaultParams = &argon2Params{
 	keyLength:   32,
 }
 
-type UserService struct {
-	repo domain.UserRepository
+type UserRepository interface {
+	Save(auth *domain.Auth) error
+	FindByUsername(username string) (*domain.Auth, error)
 }
 
-func NewUserService(repo domain.UserRepository) *UserService {
+type UserService struct {
+	repo UserRepository
+}
+
+func NewUserService(repo UserRepository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (s *UserService) SignUp(c *gin.Context, password string, username string) {
+func (s *UserService) SignUp(ctx context.Context, password string, username string) (*domain.Auth, error) {
 	encodedHash, err := createHash(password, defaultParams)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		return nil, err
 	}
 
-	user := &domain.User{
+	auth := &domain.Auth{
 		Username:     username,
 		PasswordHash: encodedHash,
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
 	}
 
-	if err := s.repo.Save(user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	if err := s.repo.Save(auth); err != nil {
+		return nil, err
 	}
-	c.JSON(http.StatusOK, gin.H{})
+	return auth, nil
+}
+
+func (s *UserService) Login(ctx context.Context, password string, username string) (*domain.JwtToken, error) {
+	user, err := s.repo.FindByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+
+	if ok, err := ComparePasswordAndHash(password, user.PasswordHash); err != nil || !ok {
+		return nil, errors.New("invalid credentials")
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"username": user.Username,
+	})
+
+	tokenString, err := token.SignedString(jwtKey)
+	if err != nil {
+		return nil, errors.New("failed to generate token")
+	}
+
+	return &domain.JwtToken{
+		Token: tokenString,
+	}, nil
+
+}
+
+
+func (s *UserService) Protected(ctx context.Context) {
+
 }
 
 func createHash(password string, p *argon2Params) (string, error) {
@@ -75,16 +110,13 @@ func createHash(password string, p *argon2Params) (string, error) {
 }
 
 func ComparePasswordAndHash(password, encodedHash string) (bool, error) {
-	// Extract parameters, salt and hash from the encoded string.
 	p, salt, hash, err := decodeHash(encodedHash)
 	if err != nil {
 		return false, err
 	}
 
-	// Hash the password using the extracted parameters and salt.
 	otherHash := argon2.IDKey([]byte(password), salt, p.iterations, p.memory, p.parallelism, p.keyLength)
 
-	// Use ConstantTimeCompare to prevent timing attacks.
 	if subtle.ConstantTimeCompare(hash, otherHash) == 1 {
 		return true, nil
 	}
@@ -134,35 +166,4 @@ func generateRandomBytes(n uint32) ([]byte, error) {
 		return nil, err
 	}
 	return b, nil
-}
-
-func (s *UserService) Login(c *gin.Context, password string, username string) {
-	user, err := s.repo.FindByUsername(username)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
-		return
-	}
-
-	if ok, err := ComparePasswordAndHash(password, user.PasswordHash); err != nil || !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
-		return
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
-	})
-
-	tokenString, err := token.SignedString(jwtKey)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"token": tokenString})
-}
-
-
-func (s *UserService) Protected(c *gin.Context) {
-
-	c.JSON(http.StatusOK, gin.H{"message": "protected"})
 }

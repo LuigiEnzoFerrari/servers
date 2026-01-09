@@ -3,11 +3,11 @@ package main
 import (
 	handlers "github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/handler/http"
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/middleware"
-	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/repository"
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/service"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/infrastructure/repository"
 )
 
 func main() {
@@ -16,7 +16,7 @@ func main() {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	userRepo := repository.NewPostgresUserRepository(db)
+	userRepo := repository.NewPostgresAuthRepository(db)
 	userService := service.NewUserService(userRepo)
 	jwtService := service.NewJwtService()
 	handler := handlers.NewHandler(userService)

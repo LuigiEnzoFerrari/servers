@@ -1,4 +1,4 @@
-package domain
+package repository
 
 import (
 	"time"
@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type User struct {
+type Auth struct {
 	ID           uuid.UUID `gorm:"type:uuid;primary_key;"` 
 	Username     string    `gorm:"unique;not null"`
 	PasswordHash string    `gorm:"not null"`
@@ -15,12 +15,8 @@ type User struct {
 	UpdatedAt    time.Time 
 }
 
-func (u *User) BeforeCreate() (err error) {
-    u.ID = uuid.New()
+func (a *Auth) beforeCreate() (err error) {
+    a.ID = uuid.New()
     return
 }
 
-type UserRepository interface {
-	Save(user *User) error
-	FindByUsername(username string) (*User, error)
-}
