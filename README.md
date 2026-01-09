@@ -16,3 +16,6 @@ This repository contains some architecture patterns for servers.
 ### BFF call for services
 ![BFF Communication](./bff/assets/bff_comunication.png)
 
+### Authentication
+
+![Authentication](./auth/assets/auth.png)
