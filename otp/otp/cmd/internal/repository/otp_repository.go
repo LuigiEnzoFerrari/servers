@@ -7,7 +7,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-
 type RedisOtpRepository struct {
 	client *redis.Client
 }
@@ -17,7 +16,7 @@ func NewRedisOtpRepository(client *redis.Client) *RedisOtpRepository {
 }
 
 func (r *RedisOtpRepository) Save(ctx context.Context, key string, otpCode string) error {
-	return r.client.Set(ctx, key, otpCode, 5*time.Minute).Err()
+	return r.client.Set(ctx, key, otpCode, 5 * time.Minute).Err()
 }
 
 func (r *RedisOtpRepository) Get(ctx context.Context, key string) (string, error) {

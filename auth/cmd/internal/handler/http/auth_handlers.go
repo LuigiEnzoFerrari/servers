@@ -11,8 +11,8 @@ import (
 type UserUseCase interface {
 	SignUp(ctx context.Context, password string, username string) (*domain.Auth, error)
 	Login(ctx context.Context, password string, username string) (*domain.JwtToken, error)
-	// Logout(ctx context.Context)
 	Protected(ctx context.Context)
+	GenerateToken(ctx context.Context, username string) (string, error)
 }
 
 type handler struct {
@@ -33,10 +33,6 @@ type authLoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type authLoginResponse struct {
-	Token string `json:"token"`
-}
-
 func (h *handler) SignUp(c *gin.Context) {
 	var req signUpRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -49,6 +45,11 @@ func (h *handler) SignUp(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "user signed up"})
+}
+
+
+type authLoginResponse struct {
+	Token string `json:"token"`
 }
 
 func (h *handler) Login(c *gin.Context) {

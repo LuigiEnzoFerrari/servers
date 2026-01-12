@@ -1,13 +1,36 @@
 services:
-  postgres:
+  auth:
+    build: .
+    container_name: auth
+    environment:
+      DB_HOST: auth-postgres
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: ${DB_PORT}
+      JWT_KEY: ${JWT_KEY}
+      JWT_EXPIRE_TIME: ${JWT_EXPIRE_TIME}
+      DB_SSL_MODE: disable
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      auth-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    
+  auth-postgres:
     image: postgres:latest
     container_name: auth-postgres
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "${POSTGRES_PORT}:5432"
     volumes:
       - ./auth-database/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

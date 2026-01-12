@@ -32,20 +32,26 @@ var defaultParams = &argon2Params{
 	keyLength:   32,
 }
 
-type UserRepository interface {
+type AuthRepository interface {
 	Save(auth *domain.Auth) error
 	FindByUsername(username string) (*domain.Auth, error)
 }
 
-type UserService struct {
-	repo UserRepository
+type JwtRepository interface {
+	ValidateToken(tokenString string) (jwt.MapClaims, error)
+	GenerateToken(username string) (string, error)
 }
 
-func NewUserService(repo UserRepository) *UserService {
-	return &UserService{repo: repo}
+type AuthService struct {
+	repo AuthRepository
+	jwtRepo JwtRepository
 }
 
-func (s *UserService) SignUp(ctx context.Context, password string, username string) (*domain.Auth, error) {
+func NewAuthService(repo AuthRepository, jwtRepo JwtRepository) *AuthService {
+	return &AuthService{repo: repo, jwtRepo: jwtRepo}
+}
+
+func (s *AuthService) SignUp(ctx context.Context, password string, username string) (*domain.Auth, error) {
 	encodedHash, err := createHash(password, defaultParams)
 	if err != nil {
 		return nil, err
@@ -64,7 +70,7 @@ func (s *UserService) SignUp(ctx context.Context, password string, username stri
 	return auth, nil
 }
 
-func (s *UserService) Login(ctx context.Context, password string, username string) (*domain.JwtToken, error) {
+func (s *AuthService) Login(ctx context.Context, password string, username string) (*domain.JwtToken, error) {
 	user, err := s.repo.FindByUsername(username)
 	if err != nil {
 		return nil, err
@@ -74,11 +80,8 @@ func (s *UserService) Login(ctx context.Context, password string, username strin
 		return nil, errors.New("invalid credentials")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
-	})
+	tokenString, err := s.jwtRepo.GenerateToken(user.Username)
 
-	tokenString, err := token.SignedString(jwtKey)
 	if err != nil {
 		return nil, errors.New("failed to generate token")
 	}
@@ -89,8 +92,12 @@ func (s *UserService) Login(ctx context.Context, password string, username strin
 
 }
 
+func (s *AuthService) GenerateToken(ctx context.Context, username string) (string, error) {
+	return s.jwtRepo.GenerateToken(username)
+}
 
-func (s *UserService) Protected(ctx context.Context) {
+
+func (s *AuthService) Protected(ctx context.Context) {
 
 }
 
