@@ -4,21 +4,20 @@ import (
 	"context"
 
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
-	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
 
 	"golang.org/x/sync/errgroup"
 )
 
 type OrderGateway interface {
-	GetOrdersByUserID(ctx context.Context, userID string) (*GetOrdersByUserIDResponse, error)
+	GetOrdersByUserID(ctx context.Context, userID string) ([]domain.ExternalOrder, error)
 }
 
 type UserGateway interface {
-	GetUsersByUserID(ctx context.Context, userID string) (*GetUserByUserIDResponse, error)
+	GetUserByUserID(ctx context.Context, userID string) (*domain.ExternalUser, error)
 }
 
 type WalletGateway interface {
-	GetBalance(ctx context.Context, userID string) (*GetUserBalanceResponse, error)
+	GetBalance(ctx context.Context, userID string) (*domain.ExternalWallet, error)
 }
 
 type DashboardService struct {
@@ -40,13 +39,13 @@ func NewDashboardService(
 }
 
 
-func (s *DashboardService) GetDashboardSummary(ctx context.Context, userID string) (*dto.DashboardSummaryResponse, error) {
+func (s *DashboardService) GetDashboardSummary(ctx context.Context, userID string) (*domain.DashboardSummary, error) {
     g, ctx := errgroup.WithContext(ctx)
 
     var (
-        ordersResp  *GetOrdersByUserIDResponse
-        userResp    *GetUserByUserIDResponse
-        balanceResp *GetUserBalanceResponse
+        ordersResp  []domain.ExternalOrder
+        userResp    *domain.ExternalUser
+        balanceResp *domain.ExternalWallet
     )
 
     g.Go(func() error {
@@ -57,7 +56,7 @@ func (s *DashboardService) GetDashboardSummary(ctx context.Context, userID strin
 
     g.Go(func() error {
         var err error
-        userResp, err = s.userGateway.GetUsersByUserID(ctx, userID)
+        userResp, err = s.userGateway.GetUserByUserID(ctx, userID)
         return err
     })
 
@@ -72,21 +71,11 @@ func (s *DashboardService) GetDashboardSummary(ctx context.Context, userID strin
     }
 
     dashboardSummary := domain.DashboardSummary{
-        Orders: mapOrdersResponseToOrders(ordersResp),
-        User:   mapUserResponseToUser(userResp),
-        Wallet: mapWalletResponseToWallet(balanceResp),
+        Orders: ordersResp,
+        User:   *userResp,
+        Wallet: *balanceResp,
     }
 
 
-    return mapDashboardSummaryToDashboardSummaryResponse(&dashboardSummary), nil
-}
-
-func (s *DashboardService) UpdateSomething(ctx context.Context, request *dto.UpdateSomethingRequest) (*dto.UpdateSomethingResponse, error) {
-
-	something := dto.UpdateSomethingResponse{
-		Something: request.Something,
-	}
-
-	return &something, nil
-	
+    return &dashboardSummary, nil
 }

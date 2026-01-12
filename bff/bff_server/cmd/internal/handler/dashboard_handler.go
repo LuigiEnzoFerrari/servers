@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/dto"
+	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
 type DashboardServiceInterface interface {
-	UpdateSomething(ctx context.Context, request *dto.UpdateSomethingRequest) (*dto.UpdateSomethingResponse, error)
-	GetDashboardSummary(ctx context.Context, userID string) (*dto.DashboardSummaryResponse, error)
+	GetDashboardSummary(ctx context.Context, userID string) (*domain.DashboardSummary, error)
 }
 
 type DashboardHandler struct {
@@ -42,20 +41,4 @@ func (h *DashboardHandler) GetDashboardSummary(c *gin.Context) {
 	}
 	log.Println("Time taken: ", time.Since(start))
 	c.JSON(http.StatusOK, dashboardSummaryResponse)
-}
-
-func (h *DashboardHandler) UpdateSomething(c *gin.Context) {
-	ctx := c.Request.Context()
-	updateSomethingRequest := dto.UpdateSomethingRequest{}
-	if err := c.ShouldBindJSON(&updateSomethingRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	updateSomethingResponse, err := h.dashboardService.UpdateSomething(ctx, &updateSomethingRequest)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, updateSomethingResponse)
 }

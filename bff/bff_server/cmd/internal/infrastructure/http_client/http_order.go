@@ -1,4 +1,4 @@
-package infrastructure
+package http_client
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/service"
+	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
 )
 
 type HttpOrderGateway struct {
@@ -24,18 +24,18 @@ func NewHttpOrderGateway(baseUrl string) *HttpOrderGateway {
 	
 }
 
-func (h *HttpOrderGateway) GetOrdersByUserID(ctx context.Context, userID string) (*service.GetOrdersByUserIDResponse, error) {
+func (h *HttpOrderGateway) GetOrdersByUserID(ctx context.Context, userID string) ([]domain.ExternalOrder, error) {
 	resp, err := h.client.Get(h.baseUrl + "/orders/" + userID)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	var data service.GetOrdersByUserIDResponse
+	var data GetOrdersByUserIDResponse
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 		return nil, err
 	}
 	
-	return &data, nil
+	return MapGetOrdersByUserIDResponseToExternalOrder(data), nil
 }
 
 

@@ -1,10 +1,10 @@
-package infrastructure
+package grpc_client
 
 import (
 	"context"
 
 	pb "github.com/LuigiEnzoFerrari/servers/bff/bff_server/api/proto/wallet/v1"
-	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/service"
+	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/domain"
 	"google.golang.org/grpc"
 )
 
@@ -17,7 +17,7 @@ func NewGrpcWalletGateway(conn *grpc.ClientConn) *GrpcWalletGateway {
 	return &GrpcWalletGateway{client: client}
 }
 
-func (g *GrpcWalletGateway) GetBalance(ctx context.Context, userID string) (*service.GetUserBalanceResponse, error) {
+func (g *GrpcWalletGateway) GetBalance(ctx context.Context, userID string) (*domain.ExternalWallet, error) {
 	response, err := g.client.GetBalance(ctx, &pb.GetUserBalanceRequest{UserId: userID})
 	if err != nil {
 		return nil, err

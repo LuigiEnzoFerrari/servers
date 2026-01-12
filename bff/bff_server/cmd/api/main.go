@@ -3,7 +3,8 @@ package main
 import (
 	"log"
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/handler"
-	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/infrastructure"
+	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/infrastructure/http_client"
+	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/infrastructure/grpc_client"
 	"github.com/LuigiEnzoFerrari/servers/bff/bff_server/cmd/internal/service"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
@@ -22,10 +23,14 @@ func main() {
 
 	conn := getGrpcClient("localhost:50051")
 	defer conn.Close()
-	grpcWalletGateway := infrastructure.NewGrpcWalletGateway(conn)
-	httpOrderGateway := infrastructure.NewHttpOrderGateway("http://localhost:8081/api/v1")
-	httpUserGateway := infrastructure.NewHttpUserGateway("http://localhost:8082/api/v1")
-	dashboardService := service.NewDashboardService(httpOrderGateway, httpUserGateway, grpcWalletGateway)
+	grpcWalletGateway := grpc_client.NewGrpcWalletGateway(conn)
+	httpOrderGateway := http_client.NewHttpOrderGateway("http://localhost:8081/api/v1")
+	httpUserGateway := http_client.NewHttpUserGateway("http://localhost:8082/api/v1")
+	dashboardService := service.NewDashboardService(
+		httpOrderGateway,
+		httpUserGateway,
+		grpcWalletGateway,
+	)
 	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 
 	server := gin.Default()

@@ -20,7 +20,7 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, userID string) (*d
 		Data: []dto.Order{
 			{
 				OrderID:     "ord_998",
-				Status:      "PROCESSING",
+				Status:      "PENDING",
 				CreatedAt:   time.Now(),
 				TotalAmount: 120.50,
 				Currency:    "USD",
@@ -34,7 +34,7 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, userID string) (*d
 			},
 			{
 				OrderID:     "ord_887",
-				Status:      "DELIVERED",
+				Status:      "COMPLETED",
 				CreatedAt:   time.Now(),
 				TotalAmount: 45.00,
 				Currency:    "USD",
@@ -48,7 +48,7 @@ func (s *OrderService) GetOrdersByUserID(ctx context.Context, userID string) (*d
 			},
 			{
 				OrderID:     "ord_665",
-				Status:      "CANCELED",
+				Status:      "CANCELLED",
 				CreatedAt:   time.Now(),
 				TotalAmount: 200.00,
 				Currency:    "USD",
