@@ -6,6 +6,8 @@ This is a simple authentication server that uses JWT to authenticate users.
 
 ![Auth Server](./assets/auth.png)
 
+openssl rand -hex 32
+
 ### Endpoints
 
 - POST /signup
