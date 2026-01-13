@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-
 	"github.com/LuigiEnzoFerrari/servers/bff/dashboard_server/cmd/internal/domain"
 )
 
@@ -21,11 +20,10 @@ func NewHttpOrderGateway(baseUrl string) *HttpOrderGateway {
 		},
 		baseUrl: baseUrl,
 	}
-
 }
 
 func (h *HttpOrderGateway) GetOrdersByUserID(ctx context.Context, userID string) ([]domain.ExternalOrder, error) {
-	resp, err := h.client.Get(h.baseUrl + "/orders/" + userID)
+	resp, err := h.client.Get(h.baseUrl + "/" + userID)
 	if err != nil {
 		return nil, err
 	}

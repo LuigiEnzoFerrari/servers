@@ -25,7 +25,7 @@ func NewHttpUserGateway(baseUrl string) *HttpUserGateway {
 }
 
 func (h *HttpUserGateway) GetUserByUserID(ctx context.Context, userID string) (*domain.ExternalUser, error) {
-	resp, err := h.client.Get(h.baseUrl + "/users/" + userID)
+	resp, err := h.client.Get(h.baseUrl + "/" + userID)
 	if err != nil {
 		return nil, err
 	}

@@ -2,7 +2,6 @@ package grpc_client
 
 import (
 	"context"
-
 	pb "github.com/LuigiEnzoFerrari/servers/bff/dashboard_server/api/proto/wallet/v1"
 	"github.com/LuigiEnzoFerrari/servers/bff/dashboard_server/cmd/internal/domain"
 	"google.golang.org/grpc"

@@ -1,0 +1,32 @@
+services:
+  wallet-server:
+    build:
+      context: ./mock_servers/wallet_server
+    container_name: wallet-server
+    environment:
+      - PORT=${WALLET_PORT}
+    restart: unless-stopped
+  order-server:
+    build:
+      context: ./mock_servers/order_server
+    container_name: order-server
+    environment:
+      - PORT=${ORDER_PORT}
+    restart: unless-stopped
+  user-server:
+    build:
+      context: ./mock_servers/user_server
+    container_name: user-server
+    environment:
+      - PORT=${USER_PORT}
+    restart: unless-stopped
+  dashboard-server:
+    build:
+      context: ./dashboard_server
+      dockerfile: Dockerfile
+    container_name: dashboard-server
+    env_file:
+      - ./.env
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

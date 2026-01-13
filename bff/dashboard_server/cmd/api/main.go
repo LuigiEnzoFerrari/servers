@@ -7,6 +7,7 @@ import (
 	"github.com/LuigiEnzoFerrari/servers/bff/dashboard_server/cmd/internal/infrastructure/grpc_client"
 	"github.com/LuigiEnzoFerrari/servers/bff/dashboard_server/cmd/internal/infrastructure/http_client"
 	"github.com/LuigiEnzoFerrari/servers/bff/dashboard_server/cmd/internal/service"
+	"github.com/LuigiEnzoFerrari/servers/bff/dashboard_server/cmd/config"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,11 +23,17 @@ func getGrpcClient(address string) *grpc.ClientConn {
 
 func main() {
 
-	conn := getGrpcClient("localhost:50051")
+	config := config.NewConfig()
+
+	grpcWalletClient := config.WalletClient
+	orderClient := config.OrderClient
+	userClient := config.UserClient
+
+	conn := getGrpcClient(grpcWalletClient.GetGrpcAddress())
 	defer conn.Close()
 	grpcWalletGateway := grpc_client.NewGrpcWalletGateway(conn)
-	httpOrderGateway := http_client.NewHttpOrderGateway("http://localhost:8081/api/v1")
-	httpUserGateway := http_client.NewHttpUserGateway("http://localhost:8082/api/v1")
+	httpOrderGateway := http_client.NewHttpOrderGateway(orderClient.GetHttpAddress())
+	httpUserGateway := http_client.NewHttpUserGateway(userClient.GetHttpAddress())
 	dashboardService := service.NewDashboardService(
 		httpOrderGateway,
 		httpUserGateway,
