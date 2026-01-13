@@ -10,10 +10,10 @@ services:
       DB_PORT: ${DB_PORT}
       JWT_KEY: ${JWT_KEY}
       JWT_EXPIRE_TIME: ${JWT_EXPIRE_TIME}
-      DB_SSL_MODE: disable
-      SERVER_PORT: 8080
+      DB_SSL_MODE: ${SERVER_SSL_MODE}
+      SERVER_PORT: ${SERVER_PORT}
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT}:${SERVER_PORT}"
     depends_on:
       auth-postgres:
         condition: service_healthy

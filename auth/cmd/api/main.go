@@ -47,5 +47,5 @@ func main() {
 	protected.Use(authMiddleware.Handler())
 	protected.POST("/protected", handler.Protected)
 
-	engine.Run(":8080")
+	engine.Run(":" + config.ServerPort())
 }

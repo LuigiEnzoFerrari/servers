@@ -8,9 +8,13 @@ import (
 )
 
 type Config struct {
+	ServerConfig ServerConfig
 	DatabaseConfig DatabaseConfig
-	RedisConfig    RedisConfig
 	JwtConfig      JwtConfig
+}
+
+type ServerConfig struct {
+	Port string
 }
 
 type DatabaseConfig struct {
@@ -22,16 +26,9 @@ type DatabaseConfig struct {
 	SSLMode  string
 }
 
-type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
-}
-
 type JwtConfig struct {
 	Key string
 	ExpireTime time.Duration
-	
 }
 
 func LoadConfig() (*Config, error) {
@@ -46,14 +43,12 @@ func LoadConfig() (*Config, error) {
 			Name:     os.Getenv("DB_NAME"),
 			SSLMode:  os.Getenv("DB_SSL_MODE"),
 		},
-		RedisConfig: RedisConfig{
-			Host:     os.Getenv("REDIS_HOST"),
-			Port:     os.Getenv("REDIS_PORT"),
-			Password: os.Getenv("REDIS_PASSWORD"),
-		},
 		JwtConfig: JwtConfig{
 			Key: os.Getenv("JWT_KEY"),
 			ExpireTime: time.Duration(jwtHour) * time.Hour,
+		},
+		ServerConfig: ServerConfig{
+			Port: os.Getenv("SERVER_PORT"),
 		},
 	}, nil
 }
@@ -68,4 +63,9 @@ func (c *Config) DNS() string {
 		c.DatabaseConfig.SSLMode,
 	)
 }
+
+func (c *Config) ServerPort() string {
+	return fmt.Sprintf("%s", c.ServerConfig.Port)
+}
+
 
