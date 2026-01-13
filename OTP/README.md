@@ -6,24 +6,6 @@ This is a simple OTP service that uses RabbitMQ to send OTPs to users.
 
 ![otp](./assets/otp.png)
 
-## Tech Stack
-
-- Go
-- Gin
-- GORM
-- RabbitMQ
-- Redis
-- SMTP
-- Mailhog
-- Docker
-- Docker Compose
-- Terraform
-
-
-![redis](https://img.shields.io/badge/redis-%23DD0031.svg?&style=for-the-badge&logo=redis&logoColor=white)
-
-## Setup
-
 change the .env.example file to .env and fill the values
 
 run 
