@@ -33,12 +33,7 @@ func NewOptService(smtpService SmtpService,
 	}
 }
 
-func (s *OptService) SendOTPEmail(ctx context.Context, body []byte) error {
-	var event domain.Event
-	if err := json.Unmarshal(body, &event); err != nil {
-		log.Printf("Failed to unmarshal order: %v", err)
-		return err
-	}
+func (s *OptService) SendOTPEmail(ctx context.Context, event domain.Event) error {
 
 	var passwordForgotEvent domain.PasswordForgotEvent
 

@@ -4,11 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
 type OptService interface {
-	SendOTPEmail(ctx context.Context, body []byte) error
+	SendOTPEmail(ctx context.Context, event domain.Event) error
 	VerifyOTP(ctx context.Context, email string, otpCode string) error
 }
 
