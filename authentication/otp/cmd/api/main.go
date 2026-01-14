@@ -4,16 +4,15 @@ import (
 	"context"
 	"log"
 
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/config"
 	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/consumer"
-	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/repository"
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/handler"
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/infrastructure/repository"
 	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/service"
-	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/smtp"
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/infrastructure/smtp"
 	"github.com/gin-gonic/gin"
 	"github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
-	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/handler"
-	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/config"
-	
 )
 
 func main() {
@@ -38,9 +37,9 @@ func main() {
 		cfg.Smtp.Password,
 	)
 
-	otpRepository := repository.NewRedisOtpRepository(redisClient)
+	redisRepository := repository.NewRedisRepository(redisClient)
 
-	service := service.NewOptService(smtpService, otpRepository)
+	service := service.NewOptService(smtpService, redisRepository)
 	optHandler := handler.NewOptHandler(service)
 	rabbitMQConsumer := consumer.NewRabbitMQConsumer(conn, []consumer.ConsumerConfig{
 		{
@@ -53,8 +52,8 @@ func main() {
 	rabbitMQConsumer.Start(ctx)
 
 	r := gin.Default()
-	api := r.Group("/api/v1")
-	api.POST("/otp/validation", optHandler.VerifyOTP)
+	api := r.Group("/api/v1/otp")
+	api.POST("/validation", optHandler.VerifyOTP)
 
 	r.Run(":" + cfg.Server.Port)
 }

@@ -1,17 +1,22 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
-	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/domain"
 	"github.com/gin-gonic/gin"
 )
 
-type OptHandler struct {
-	optService domain.OptService
+type OptService interface {
+	SendOTPEmail(ctx context.Context, body []byte) error
+	VerifyOTP(ctx context.Context, email string, otpCode string) error
 }
 
-func NewOptHandler(optService domain.OptService) *OptHandler {
+type OptHandler struct {
+	optService OptService
+}
+
+func NewOptHandler(optService OptService) *OptHandler {
 	return &OptHandler{optService: optService}
 }
 

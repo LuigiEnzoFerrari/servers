@@ -2,49 +2,38 @@ package service
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"log"
-	"math/big"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/domain"
-	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/smtp"
+	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/pkg"
 )
 
-type OptService struct {
-	smtpService *smtp.MailHogService
-	otpRepository domain.OptRepository
+type cacheRepository interface {
+	Save(ctx context.Context, key string, otpCode string) error
+	Get(ctx context.Context, key string) (string, error)
+	Delete(ctx context.Context, key string) error
 }
 
-func NewOptService(smtpService *smtp.MailHogService, otpRepository domain.OptRepository) *OptService {
+type SmtpService interface {
+	SendOTP(toEmail string, otpCode string) error
+}
+
+type OptService struct {
+	smtpService SmtpService
+	otpRepository cacheRepository
+}
+
+func NewOptService(smtpService SmtpService,
+	otpRepository cacheRepository) *OptService {
 	return &OptService{
 		smtpService: smtpService,
 		otpRepository: otpRepository,
 	}
 }
 
-func GenerateOTP(length int) (string, error) {
-    const digits = "0123456789"
-    
-    otp := make([]byte, length)
-    
-    maxIndex := big.NewInt(int64(len(digits)))
-
-    for i := 0; i < length; i++ {
-        num, err := rand.Int(rand.Reader, maxIndex)
-        if err != nil {
-            return "", err
-        }
-        
-        otp[i] = digits[num.Int64()]
-    }
-
-    return string(otp), nil
-}
-
 func (s *OptService) SendOTPEmail(ctx context.Context, body []byte) error {
-	log.Println("Sending OTP email")
 	var event domain.Event
 	if err := json.Unmarshal(body, &event); err != nil {
 		log.Printf("Failed to unmarshal order: %v", err)
@@ -60,7 +49,7 @@ func (s *OptService) SendOTPEmail(ctx context.Context, body []byte) error {
 
 	log.Println("Username: " + passwordForgotEvent.Username)
 
-	otp, err := GenerateOTP(6)
+	otp, err := pkg.GenerateOTP(6)
 	if err != nil {
 		log.Printf("Failed to generate OTP: %v", err)
 		return err
@@ -74,6 +63,7 @@ func (s *OptService) SendOTPEmail(ctx context.Context, body []byte) error {
 		return err
 	}
 
+	log.Println("Sending OTP email")
 	err = s.smtpService.SendOTP(passwordForgotEvent.Username, otp)
 	if err != nil {
 		log.Printf("Failed to send OTP email: %v", err)
