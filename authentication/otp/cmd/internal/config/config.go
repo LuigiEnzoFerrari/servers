@@ -40,25 +40,25 @@ type ServerConfig struct {
 func Load() *Config {
 	return &Config{
 		Server: ServerConfig{
-			Port: getEnv("SERVER_PORT", "8080"),
+			Port: os.Getenv("SERVER_PORT"),
 		},
 		RabbitMQ: RabbitMQConfig{
-			User:     getEnv("RABBITMQ_USER", ""),
-			Password: getEnv("RABBITMQ_PASSWORD", ""),
-			Host:     getEnv("RABBITMQ_HOST", ""),
-			Port:     getEnv("RABBITMQ_PORT", ""),
-			VHost:    getEnv("RABBITMQ_VHOST", ""),
+			User:     os.Getenv("RABBITMQ_USER"),
+			Password: os.Getenv("RABBITMQ_PASSWORD"),
+			Host:     os.Getenv("RABBITMQ_HOST"),
+			Port:     os.Getenv("RABBITMQ_PORT"),
+			VHost:    os.Getenv("RABBITMQ_VHOST"),
 		},
 		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", ""),
-			Port:     getEnv("REDIS_PORT", ""),
-			Password: getEnv("REDIS_PASSWORD", ""),
+			Host:     os.Getenv("REDIS_HOST"),
+			Port:     os.Getenv("REDIS_PORT"),
+			Password: os.Getenv("REDIS_PASSWORD"),
 		},
 		Smtp: SmtpConfig{
-			Host:     getEnv("SMTP_HOST", ""),
-			Port:     getEnv("SMTP_PORT", ""),
-			Password: getEnv("SMTP_PASSWORD", ""),
-			Sender:   getEnv("SMTP_SENDER", ""),
+			Host:     os.Getenv("SMTP_HOST"),
+			Port:     os.Getenv("SMTP_PORT"),
+			Password: os.Getenv("SMTP_PASSWORD"),
+			Sender:   os.Getenv("SMTP_SENDER"),
 		},
 	}
 }
@@ -68,9 +68,6 @@ func (c *RabbitMQConfig) URL() string {
 		c.User, c.Password, c.Host, c.Port, c.VHost)
 }
 
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
+func (sv *ServerConfig) GetPort() string {
+	return sv.Port
 }

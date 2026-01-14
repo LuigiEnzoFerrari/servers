@@ -55,5 +55,5 @@ func main() {
 	api := r.Group("/api/v1/otp")
 	api.POST("/validation", optHandler.VerifyOTP)
 
-	r.Run(":" + cfg.Server.Port)
+	r.Run(":" + cfg.Server.GetPort())
 }
