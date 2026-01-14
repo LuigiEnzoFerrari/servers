@@ -1,6 +1,19 @@
 services:
 
-# Auth Domain
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+  # Auth Domain
   auth:
     build: ./auth
     container_name: auth
@@ -10,7 +23,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DB_NAME: ${DB_NAME}
       DB_PORT: ${DB_PORT}
-      DB_SSL_MODE: ${SERVER_SSL_MODE}
+      DB_SSL_MODE: ${DB_SSL_MODE}
 
       JWT_KEY: ${JWT_KEY}
       JWT_EXPIRE_TIME: ${JWT_EXPIRE_TIME}
@@ -21,16 +34,19 @@ services:
       RABBITMQ_VHOST: ${RABBITMQ_VHOST}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       SERVER_PORT: ${AUTH_SERVER_PORT}
-    ports:
-      - "${AUTH_SERVER_PORT}:${AUTH_SERVER_PORT}"
-      
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth.rule=Host(`auth.localhost`) || (Host(`localhost`) && PathPrefix(`/api/v1/auth`))"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=${AUTH_SERVER_PORT}"
+
     depends_on:
       auth-postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
-    
+
   auth-postgres:
     image: postgres:latest
     container_name: auth-postgres
@@ -42,17 +58,14 @@ services:
       - ./auth-database/init.sql:/docker-entrypoint-initdb.d/init.sql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
       interval: 10s
       timeout: 5s
       retries: 5
-
-# OTP Domain
+  # OTP Domain
   otp:
     build: ./otp
     container_name: otp
-    ports:
-      - "8081:${OTP_SERVER_PORT}"
     environment:
       SERVER_PORT: ${OTP_SERVER_PORT}
       SMTP_HOST: ${SMTP_HOST}
@@ -67,6 +80,11 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_VHOST: ${RABBITMQ_VHOST}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.otp.rule=Host(`otp.localhost`) || (Host(`localhost`) && PathPrefix(`/api/v1/otp`))"
+      - "traefik.http.routers.otp.entrypoints=web"
+      - "traefik.http.services.otp.loadbalancer.server.port=${OTP_SERVER_PORT}"
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -82,13 +100,12 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-
-# Infra
+  # Infra
 
   rabbitmq:
     build: ./rabbitmq
@@ -99,7 +116,7 @@ services:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -117,7 +134,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-        
+
   mailhog:
     image: mailhog/mailhog
     container_name: mailhog
@@ -125,9 +142,8 @@ services:
       - "8025:8025"
     restart: always
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8025/api/v2/messages"]
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:8025/api/v2/messages" ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
-
