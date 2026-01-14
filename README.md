@@ -10,7 +10,7 @@ Each folder contains a different architecture pattern for servers.
 
 This architecture pattern is used for sending one time password (OTP) to users.
 
-![OTP](./OTP/assets/otp.png)
+![OTP](./authentication/assets/otp.png)
 
 > Go - Gin - GORM - RabbitMQ - Redis - SMTP - Mailhog - Docker - Docker Compose - Terraform - DDD
 
@@ -34,6 +34,6 @@ This architecture pattern is used for aggregating and formatting data from diffe
 
 This architecture pattern is used for authentication and authorization of users that uses JWT. That way, the frontend can store the token in the browser keeping the user logged in until the token expires.
 
-![Authentication](./AUTH/assets/auth.png)
+![Authentication](./authentication/assets/auth.png)
 
 > Go - Gin - GORM - Docker - Docker Compose - Postgres - JWT - DDD
