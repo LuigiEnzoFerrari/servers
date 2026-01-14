@@ -1,4 +1,6 @@
 services:
+
+# Auth Domain
   auth:
     build: ./auth
     container_name: auth
@@ -22,6 +24,7 @@ services:
 
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
+      
     depends_on:
       auth-postgres:
         condition: service_healthy
@@ -44,6 +47,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+# OTP Domain
   otp:
     build: ./otp
     container_name: otp
@@ -71,6 +76,21 @@ services:
       mailhog:
         condition: service_healthy
     restart: unless-stopped
+
+  otp-redis:
+    image: redis:latest
+    container_name: otp-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+# Infra
+
   rabbitmq:
     build: ./rabbitmq
     container_name: rabbitmq
@@ -84,7 +104,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
+      
   terraform:
     image: hashicorp/terraform:latest
     container_name: terraform
@@ -98,6 +118,7 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+        
   mailhog:
     image: mailhog/mailhog
     container_name: mailhog
@@ -110,14 +131,4 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-  otp-redis:
-    image: redis:latest
-    container_name: otp-redis
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
