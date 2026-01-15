@@ -1,46 +1,53 @@
 package main
 
 import (
-	"log"
+	"log/slog"
+	"os"
 
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/config"
 	handlers "github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/handler/http"
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/infrastructure/publish"
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/infrastructure/repository"
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/infrastructure/security"
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/service"
 	"github.com/gin-gonic/gin"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/infrastructure/publish"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 func main() {
 
-	config, _ := config.LoadConfig()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
+	config, err := config.LoadConfig()
+	if err != nil {
+		slog.Error("failed to load config", "error", err)
+		os.Exit(1)
+	}
 
 	db, err := gorm.Open(postgres.Open(config.DNS()), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
-	}
-
-	log.Println(config.DNS())
-	if err != nil {
-		panic("failed to load config")
+		slog.Error("failed to connect database", "error", err)
+		os.Exit(1)
 	}
 
 	conn, err := amqp.Dial(config.RabbitMQURL())
 	if err != nil {
-		panic(err)
+		slog.Error("failed to connect to rabbitmq", "error", err)
+		os.Exit(1)
 	}
 	ch, err := conn.Channel()
 	if err != nil {
-		panic(err)
+		slog.Error("failed to open rabbitmq channel", "error", err)
+		os.Exit(1)
 	}
 
 	publishService, err := publish.NewRabbitMQPublish(ch)
 	if err != nil {
-		panic(err)
+		slog.Error("failed to create rabbitmq publisher", "error", err)
+		os.Exit(1)
 	}
 
 	authRepo := repository.NewPostgresAuthRepository(db)

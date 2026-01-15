@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/domain"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -55,6 +54,6 @@ func (p *RabbitMQPublish) publish(ctx context.Context, exchange string, routingK
 }
 
 func (p *RabbitMQPublish) PasswordForgotEvent(ctx context.Context, event domain.Event) error {
-	log.Println("Publishing password forgot event")
+
 	return p.publish(ctx, "auth", "passwordforgot", event)
 }

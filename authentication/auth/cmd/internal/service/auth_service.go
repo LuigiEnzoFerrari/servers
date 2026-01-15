@@ -79,7 +79,7 @@ func (s *AuthService) SignUp(ctx context.Context, password string, username stri
 func (s *AuthService) Login(ctx context.Context, password string, username string) (*domain.JwtToken, error) {
 	user, err := s.repo.FindByUsername(username)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("repo: find user: %w", err)
 	}
 
 	if ok, err := ComparePasswordAndHash(password, user.PasswordHash); err != nil || !ok {

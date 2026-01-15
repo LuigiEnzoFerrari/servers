@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"errors"
+	"log/slog"
 	"net/http"
 
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/domain"
@@ -61,7 +63,16 @@ func (h *handler) Login(c *gin.Context) {
 	}
 	token, err := h.service.Login(c, req.Password, req.Username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, domain.ErrInvalidCredentials) || errors.Is(err, domain.ErrUserNotFound) {
+			slog.Warn("login failed: invalid credentials", "username", req.Username, "ip", c.ClientIP())
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
+			return
+		}
+		slog.Error("login failed: internal error", 
+            "error", err,
+            "username", req.Username,
+        )
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 	c.JSON(http.StatusOK, authLoginResponse{Token: token.Token})
