@@ -23,8 +23,6 @@ func NewRabbitMQPublish(ch *amqp.Channel) (*RabbitMQPublish, error) {
 
 func (p *RabbitMQPublish) publish(ctx context.Context, exchange string, routingKey string, event domain.Event) error {
 
-	defer p.ch.Close()
-
 	body, err := json.Marshal(event)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)

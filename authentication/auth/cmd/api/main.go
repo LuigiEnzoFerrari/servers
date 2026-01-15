@@ -38,11 +38,13 @@ func main() {
 		slog.Error("failed to connect to rabbitmq", "error", err)
 		os.Exit(1)
 	}
+	defer conn.Close()
 	ch, err := conn.Channel()
 	if err != nil {
 		slog.Error("failed to open rabbitmq channel", "error", err)
 		os.Exit(1)
 	}
+	defer ch.Close()
 
 	publishService, err := publish.NewRabbitMQPublish(ch)
 	if err != nil {
