@@ -39,12 +39,19 @@ type authLoginRequest struct {
 func (h *handler) SignUp(c *gin.Context) {
 	var req signUpRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		slog.Error("signup failed: invalid request", "error", err, "username", req.Username)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	_, err := h.service.SignUp(c, req.Password, req.Username)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if errors.Is(err, domain.ErrConflict) {
+			c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
+			slog.Warn("signup failed: user already exists", "username", req.Username, "ip", c.ClientIP())
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+		slog.Error("signup failed: internal error", "error", err, "username", req.Username)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "user signed up"})
@@ -58,6 +65,7 @@ type authLoginResponse struct {
 func (h *handler) Login(c *gin.Context) {
 	var req authLoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		slog.Error("login failed: invalid request", "error", err, "username", req.Username)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}

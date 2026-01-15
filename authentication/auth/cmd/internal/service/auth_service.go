@@ -60,7 +60,7 @@ func NewAuthService(repo AuthRepository, jwtRepo JwtRepository, eventPublisher E
 func (s *AuthService) SignUp(ctx context.Context, password string, username string) (*domain.Auth, error) {
 	encodedHash, err := createHash(password, defaultParams)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("hashing password: %w", err)
 	}
 
 	auth := &domain.Auth{
@@ -71,7 +71,7 @@ func (s *AuthService) SignUp(ctx context.Context, password string, username stri
 	}
 
 	if err := s.repo.Save(auth); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("repo: %w", err)
 	}
 	return auth, nil
 }
