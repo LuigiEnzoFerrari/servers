@@ -64,17 +64,21 @@ func main() {
 	handler := handlers.NewHandler(authService)
 	authMiddleware := handlers.NewAuthMiddleware(middlewareService)
 
-	engine := gin.Default()
-	group := engine.Group("/api/v1/auth")
+	engine := gin.New()
+	engine.Use(handlers.SlogMiddleware(logger))
+	engine.Use(gin.Recovery())
 
-	group.POST("/signup", handler.SignUp)
-	group.POST("/login", handler.Login)
-	group.POST("/logout", handler.Logout)
-	group.POST("/password/forgot", handler.ForgotPassword)
+	api := engine.Group("/api/v1/auth")
+	api.POST("/signup", handler.SignUp)
+	api.POST("/login", handler.Login)
+	api.POST("/logout", handler.Logout)
+	api.POST("/password/forgot", handler.ForgotPassword)
 
-	protected := engine.Group("/api/v1/auth")
-	protected.Use(authMiddleware.Handler())
-	protected.POST("/protected", handler.Protected)
+	apiProtected := engine.Group("/api/v1/auth")
+	apiProtected.Use(authMiddleware.Handler())
+	apiProtected.Use(handlers.SlogMiddleware(logger))
+	apiProtected.POST("/protected", handler.Protected)
 
+	logger.Info("server started", "port", config.ServerPort())
 	engine.Run(":" + config.ServerPort())
 }

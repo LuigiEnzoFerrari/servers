@@ -16,6 +16,7 @@ type SmtpService interface {
 type Event struct {
 	ID        string    `json:"id"`
 	Type      string    `json:"type"`
+	TraceID   string    `json:"trace_id"`
 	Payload   json.RawMessage       `json:"payload"`
 	OccurredAt time.Time `json:"occurred_at"`
 }

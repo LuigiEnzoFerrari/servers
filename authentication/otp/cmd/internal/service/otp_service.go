@@ -3,8 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"log"
+	"fmt"
 
 	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/internal/domain"
 	"github.com/LuigiEnzoFerrari/servers/otp/otp/cmd/pkg"
@@ -38,31 +37,24 @@ func (s *OptService) SendOTPEmail(ctx context.Context, event domain.Event) error
 	var passwordForgotEvent domain.PasswordForgotEvent
 
 	if err := json.Unmarshal(event.Payload, &passwordForgotEvent); err != nil {
-		log.Printf("Failed to unmarshal password forgot event: %v", err)
-		return err
+		return fmt.Errorf("failed to unmarshal password forgot event: %v", err)
 	}
-
-	log.Println("Username: " + passwordForgotEvent.Username)
 
 	otp, err := pkg.GenerateOTP(6)
 	if err != nil {
-		log.Printf("Failed to generate OTP: %v", err)
-		return err
+		return fmt.Errorf("failed to generate OTP: %v", err)
 	}
 
 	key := "otp:" + passwordForgotEvent.Username
 
 	err = s.otpRepository.Save(ctx, key, otp)
 	if err != nil {
-		log.Printf("Failed to save OTP: %v", err)
-		return err
+		return fmt.Errorf("failed to save OTP: %v", err)
 	}
 
-	log.Println("Sending OTP email")
 	err = s.smtpService.SendOTP(passwordForgotEvent.Username, otp)
 	if err != nil {
-		log.Printf("Failed to send OTP email: %v", err)
-		return err
+		return fmt.Errorf("failed to send OTP email: %v", err)
 	}
 	return nil
 }
@@ -71,16 +63,14 @@ func (s *OptService) VerifyOTP(ctx context.Context, email string, otpCode string
 	key := "otp:" + email
 	storedOtp, err := s.otpRepository.Get(ctx, key)
 	if err != nil {
-		log.Printf("Failed to get OTP: %v", err)
-		return err
+		return fmt.Errorf("failed to get OTP: %v", err)
 	}
 	if storedOtp != otpCode {
-		return errors.New("invalid OTP")
+		return fmt.Errorf("invalid OTP")
 	}
 	err = s.otpRepository.Delete(ctx, key)
 	if err != nil {
-		log.Printf("Failed to delete OTP: %v", err)
-		return err
+		return fmt.Errorf("failed to delete OTP: %v", err)
 	}
 	return nil
 }

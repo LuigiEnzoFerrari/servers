@@ -82,14 +82,20 @@ func (s *AuthService) Login(ctx context.Context, password string, username strin
 		return nil, fmt.Errorf("repo: find user: %w", err)
 	}
 
-	if ok, err := ComparePasswordAndHash(password, user.PasswordHash); err != nil || !ok {
-		return nil, errors.New("invalid credentials")
+	ok, err := ComparePasswordAndHash(password, user.PasswordHash);
+
+	if err != nil {
+		return nil, fmt.Errorf("comparing password and hash: %w", err)
+	}
+
+	if !ok {
+		return nil, fmt.Errorf("invalid credentials")
 	}
 
 	tokenString, err := s.jwtRepo.GenerateToken(user.Username)
 
 	if err != nil {
-		return nil, errors.New("failed to generate token")
+		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
 	return &domain.JwtToken{
@@ -188,20 +194,25 @@ type PasswordForgotEvent struct {
 func (s *AuthService) ForgotPassword(ctx context.Context, username string) error {
 	_, err := s.repo.FindByUsername(username)
 	if err != nil {
-		return err
+		return fmt.Errorf("repo: find user: %w", err)
 	}
 
 	passwordForgotEvent := PasswordForgotEvent{Username: username}
+	traceID, ok := ctx.Value("trace_id").(string)
+	if !ok {
+		return fmt.Errorf("trace_id not found")
+	}
 
 	event := domain.Event{
 		ID:   uuid.New().String(),
+		TraceID: traceID,
 		Type: "auth.password_forgot",
 		Payload: passwordForgotEvent,
 		OccurredAt: time.Now(),
 	}
 
 	if err := s.eventPublisher.PasswordForgotEvent(ctx, event); err != nil {
-		return err
+		return fmt.Errorf("event publisher: %w", err)
 	}
 
 	return nil

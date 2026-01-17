@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"os/signal"
 	"syscall"
 	"time"
@@ -21,22 +22,28 @@ import (
 
 func main() {
 
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+
+	ctx = context.WithValue(ctx, "logger", logger)
+	
 	defer stop()
 
 	cfg := config.Load()
 	conn, err := amqp091.Dial(cfg.RabbitMQ.URL())
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to connect to RabbitMQ", "error", err)
+		os.Exit(1)
 	}
-	log.Println("Connected to RabbitMQ")
 	defer conn.Close()
 
 	ch, err := conn.Channel()
 	if err != nil {
-		log.Fatal(err)
+		slog.Error("failed to open channel", "error", err)
+		os.Exit(1)
 	}
-	log.Println("Opened channel to RabbitMQ")
 	defer ch.Close()
 
 	redisClient := redis.NewClient(&redis.Options{
@@ -44,7 +51,6 @@ func main() {
 		Password: cfg.Redis.Password,
 		DB:       0,
 	})
-	log.Println("Connected to Redis")
 	redisRepository := repository.NewRedisRepository(redisClient)
 
 
@@ -61,7 +67,8 @@ func main() {
 
 	rabbitMQConsumer, err := consumer.NewRabbitMQConsumer(ch, service, 1)
 	if err != nil {
-		panic(err)
+		slog.Error("failed to create RabbitMQ consumer", "error", err)
+		os.Exit(1)
 	}
 
 	r := gin.Default()
@@ -74,25 +81,20 @@ func main() {
 	}
 
 	go func() {
-		log.Println("RabbitMQ consumer started")
 		rabbitMQConsumer.Start(ctx, "otp.passwordforgot")
 	}()
 
 	go func() {
-		log.Println("Server started")
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
 		}
 	}()
 
 	<-ctx.Done()
-	log.Println("Context cancelled, waiting for server and consumer to finish...")
 	
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Fatalf("server shutdown: %s\n", err)
+		slog.Error("failed to shutdown server", "error", err)
 	}
-	log.Println("Server shutdown and RabbitMQ consumer stopped")
 }

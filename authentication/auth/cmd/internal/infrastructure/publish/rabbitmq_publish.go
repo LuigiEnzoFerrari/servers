@@ -28,6 +28,10 @@ func (p *RabbitMQPublish) publish(ctx context.Context, exchange string, routingK
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
+	headers := amqp.Table{
+		"trace_id": event.TraceID,
+	}
+
 	confirmation, err := p.ch.PublishWithDeferredConfirmWithContext(
 		ctx,
 		exchange,
@@ -37,6 +41,8 @@ func (p *RabbitMQPublish) publish(ctx context.Context, exchange string, routingK
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,
+			Headers:     headers,
+			Timestamp:   event.OccurredAt,
 		})
 
 	if err != nil {

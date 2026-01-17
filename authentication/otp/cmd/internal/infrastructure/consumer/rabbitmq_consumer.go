@@ -3,7 +3,7 @@ package consumer
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -34,7 +34,6 @@ func NewRabbitMQConsumer(ch *amqp.Channel, handler EventHandler, workers int) (*
 }
 
 func (c *RabbitMQConsumer) Start(ctx context.Context, queueName string) error {
-	log.Println("RabbitMQ consumer started for queue", queueName)
 	msgs, err := c.ch.Consume(
 		queueName,
 		"my-consumer-id",
@@ -59,15 +58,13 @@ func (c *RabbitMQConsumer) Start(ctx context.Context, queueName string) error {
 	}
 
 	<-ctx.Done()
-	log.Println("Context cancelled, waiting for workers to finish...")
 	wg.Wait()
-	log.Println("All workers finished.")
 
 	return nil
 }
 
 func (c *RabbitMQConsumer) worker(ctx context.Context, msgs <-chan amqp.Delivery, id int) {
-	log.Printf("Worker %d started", id)
+	logger, _ := ctx.Value("logger").(*slog.Logger)
 	for {
 		select {
 		case <-ctx.Done():
@@ -78,17 +75,28 @@ func (c *RabbitMQConsumer) worker(ctx context.Context, msgs <-chan amqp.Delivery
 			}
 
 			var event domain.Event
+			
 			if err := json.Unmarshal(msg.Body, &event); err != nil {
 				msg.Nack(false, false)
 				continue
 			}
+			
+			rabbitMQLogger := logger.With(
+				slog.String("trace_id", event.TraceID),
+				slog.Int("worker_id", id),
+				slog.String("event", event.Type),
+			)
+
+			ctx = context.WithValue(ctx, "logger", rabbitMQLogger)
+			rabbitMQLogger.Info("Processing event", "type", event.Type)
 
 			msgCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+
 			err := c.handler.SendOTPEmail(msgCtx, event)
 			cancel()
 
 			if err != nil {
-				log.Printf("Error processing event %s: %v", event.ID, err)
+				rabbitMQLogger.Error("Error processing event", "error", err)
 				msg.Nack(false, false)
 			} else {
 				msg.Ack(false)

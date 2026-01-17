@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/domain"
+	"github.com/LuigiEnzoFerrari/servers/auth/cmd/internal/handler/http/dto"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,20 +27,12 @@ func NewHandler(service UserUseCase) *handler {
 	return &handler{service: service}
 }
 
-type signUpRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-type authLoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
 func (h *handler) SignUp(c *gin.Context) {
-	var req signUpRequest
+	var req dto.SignUpRequest
+	log, _ := c.Get("logger")
+	logger := log.(*slog.Logger)
 	if err := c.ShouldBindJSON(&req); err != nil {
-		slog.Error("signup failed: invalid request", "error", err, "username", req.Username)
+		logger.Error("signup failed: invalid request", "error", err, "username", req.Username)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -47,43 +40,43 @@ func (h *handler) SignUp(c *gin.Context) {
 	if err != nil {
 		if errors.Is(err, domain.ErrConflict) {
 			c.JSON(http.StatusConflict, gin.H{"error": "user already exists"})
-			slog.Warn("signup failed: user already exists", "username", req.Username, "ip", c.ClientIP())
+			logger.Warn("signup failed: user already exists", "username", req.Username, "ip", c.ClientIP())
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
-		slog.Error("signup failed: internal error", "error", err, "username", req.Username)
+		logger.Error("signup failed: internal error", "error", err, "username", req.Username)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "user signed up"})
 }
 
 
-type authLoginResponse struct {
-	Token string `json:"token"`
-}
-
 func (h *handler) Login(c *gin.Context) {
-	var req authLoginRequest
+	var req dto.AuthLoginRequest
+	log, _ := c.Get("logger")
+	logger := log.(*slog.Logger)
+
 	if err := c.ShouldBindJSON(&req); err != nil {
-		slog.Error("login failed: invalid request", "error", err, "username", req.Username)
+		logger.Error("login failed: invalid request", "error", err, "username", req.Username)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	token, err := h.service.Login(c, req.Password, req.Username)
 	if err != nil {
 		if errors.Is(err, domain.ErrInvalidCredentials) || errors.Is(err, domain.ErrUserNotFound) {
-			slog.Warn("login failed: invalid credentials", "username", req.Username, "ip", c.ClientIP())
+			logger.Warn("login failed: invalid credentials", "username", req.Username, "ip", c.ClientIP())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 			return
 		}
-		slog.Error("login failed: internal error", 
+		logger.Error("login failed: internal error", 
             "error", err,
             "username", req.Username,
+            "ip", c.ClientIP(),
         )
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
-	c.JSON(http.StatusOK, authLoginResponse{Token: token.Token})
+	c.JSON(http.StatusOK, dto.AuthLoginResponse{Token: token.Token})
 }
 
 func (h *handler) Logout(c *gin.Context) {
@@ -91,18 +84,28 @@ func (h *handler) Logout(c *gin.Context) {
 }
 
 func (h *handler) ForgotPassword(c *gin.Context) {
-	type ForgotPasswordRequest struct {
-		Username string `json:"username" binding:"required"`
-	}
-
-	var req ForgotPasswordRequest
+	var req dto.ForgotPasswordRequest
+	log, _ := c.Get("logger")
+	logger := log.(*slog.Logger)
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logger.Error("forgot password failed: invalid request", "error", err, "username", req.Username)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := h.service.ForgotPassword(c.Request.Context(), req.Username); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	err := h.service.ForgotPassword(c.Request.Context(), req.Username)
+
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			logger.Warn("forgot password failed: user not found", "username", req.Username, "ip", c.ClientIP())
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		logger.Error("forgot password failed: ",
+			"error", err,
+			"username", req.Username,
+			"ip", c.ClientIP())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 		return
 	}
 
