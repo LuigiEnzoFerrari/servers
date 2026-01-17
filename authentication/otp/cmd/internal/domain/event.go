@@ -1,17 +1,16 @@
 package domain
 
 import (
-	"encoding/json"
+	"context"
 	"time"
+	"encoding/json"
 )
+
 
 type PasswordForgotEvent struct {
 	Username string `json:"username"`
 }
 
-type SmtpService interface {
-	SendOTPEmail(toEmail string, otpCode string) error
-}
 
 type Event struct {
 	ID        string    `json:"id"`
@@ -20,3 +19,5 @@ type Event struct {
 	Payload   json.RawMessage       `json:"payload"`
 	OccurredAt time.Time `json:"occurred_at"`
 }
+
+type EventHandler func(ctx context.Context, event Event) error

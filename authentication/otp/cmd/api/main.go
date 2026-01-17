@@ -65,13 +65,15 @@ func main() {
 
 	optHandler := handler.NewOptHandler(service)
 
-	rabbitMQConsumer, err := consumer.NewRabbitMQConsumer(ch, service, 1)
+	rabbitMQConsumer, err := consumer.NewRabbitMQConsumer(ch, 1)
 	if err != nil {
 		slog.Error("failed to create RabbitMQ consumer", "error", err)
 		os.Exit(1)
 	}
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(handler.SlogMiddleware(logger))
+	r.Use(gin.Recovery())
 	api := r.Group("/api/v1/otp")
 	api.POST("/validation", optHandler.VerifyOTP)
 
@@ -81,7 +83,7 @@ func main() {
 	}
 
 	go func() {
-		rabbitMQConsumer.Start(ctx, "otp.passwordforgot")
+		rabbitMQConsumer.Start(ctx, service.SendOTPEmail, "otp.passwordforgot")
 	}()
 
 	go func() {

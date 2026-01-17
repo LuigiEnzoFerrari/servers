@@ -11,29 +11,24 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type EventHandler interface {
-	SendOTPEmail(ctx context.Context, event domain.Event) error
-}
 
 type RabbitMQConsumer struct {
 	ch      *amqp.Channel
-	handler EventHandler
 	workers int
 }
 
-func NewRabbitMQConsumer(ch *amqp.Channel, handler EventHandler, workers int) (*RabbitMQConsumer, error) {
+func NewRabbitMQConsumer(ch *amqp.Channel, workers int) (*RabbitMQConsumer, error) {
 	if err := ch.Qos(workers*2, 0, false); err != nil {
 		return nil, err
 	}
 	
 	return &RabbitMQConsumer{
 		ch:      ch,
-		handler: handler,
 		workers: workers,
 	}, nil
 }
 
-func (c *RabbitMQConsumer) Start(ctx context.Context, queueName string) error {
+func (c *RabbitMQConsumer) Start(ctx context.Context, handler domain.EventHandler, queueName string) error {
 	msgs, err := c.ch.Consume(
 		queueName,
 		"my-consumer-id",
@@ -53,7 +48,7 @@ func (c *RabbitMQConsumer) Start(ctx context.Context, queueName string) error {
 		wg.Add(1)
 		go func(workerID int) {
 			defer wg.Done()
-			c.worker(ctx, msgs, workerID)
+			c.worker(ctx, msgs, workerID, handler)
 		}(i)
 	}
 
@@ -63,7 +58,7 @@ func (c *RabbitMQConsumer) Start(ctx context.Context, queueName string) error {
 	return nil
 }
 
-func (c *RabbitMQConsumer) worker(ctx context.Context, msgs <-chan amqp.Delivery, id int) {
+func (c *RabbitMQConsumer) worker(ctx context.Context, msgs <-chan amqp.Delivery, id int, handler domain.EventHandler) {
 	logger, _ := ctx.Value("logger").(*slog.Logger)
 	for {
 		select {
@@ -92,7 +87,7 @@ func (c *RabbitMQConsumer) worker(ctx context.Context, msgs <-chan amqp.Delivery
 
 			msgCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 
-			err := c.handler.SendOTPEmail(msgCtx, event)
+			err := handler(msgCtx, event)
 			cancel()
 
 			if err != nil {

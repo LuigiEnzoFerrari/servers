@@ -63,10 +63,10 @@ func (s *OptService) VerifyOTP(ctx context.Context, email string, otpCode string
 	key := "otp:" + email
 	storedOtp, err := s.otpRepository.Get(ctx, key)
 	if err != nil {
-		return fmt.Errorf("failed to get OTP: %v", err)
+		return fmt.Errorf("failed to get OTP: %w", err)
 	}
 	if storedOtp != otpCode {
-		return fmt.Errorf("invalid OTP")
+		return domain.InvalidOTPError
 	}
 	err = s.otpRepository.Delete(ctx, key)
 	if err != nil {
