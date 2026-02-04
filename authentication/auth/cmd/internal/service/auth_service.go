@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"strings"
@@ -85,11 +86,11 @@ func (s *AuthService) Login(ctx context.Context, password string, username strin
 	ok, err := ComparePasswordAndHash(password, user.PasswordHash);
 
 	if err != nil {
-		return nil, fmt.Errorf("comparing password and hash: %w", err)
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	if !ok {
-		return nil, fmt.Errorf("invalid credentials")
+		return nil, domain.ErrInvalidCredentials
 	}
 
 	tokenString, err := s.jwtRepo.GenerateToken(user.Username)
@@ -192,6 +193,8 @@ type PasswordForgotEvent struct {
 }
 
 func (s *AuthService) ForgotPassword(ctx context.Context, username string) error {
+	traceID, _ := ctx.Value("trace_id").(string)
+
 	_, err := s.repo.FindByUsername(username)
 	if err != nil {
 		return fmt.Errorf("repo: find user: %w", err)
@@ -214,6 +217,10 @@ func (s *AuthService) ForgotPassword(ctx context.Context, username string) error
 	if err := s.eventPublisher.PasswordForgotEvent(ctx, event); err != nil {
 		return fmt.Errorf("event publisher: %w", err)
 	}
+	slog.InfoContext(ctx,
+		"Password forgot event published",
+		"trace_id", traceID,
+	)
 
 	return nil
 }

@@ -63,10 +63,14 @@ func (h *handler) Login(c *gin.Context) {
 	}
 	token, err := h.service.Login(c, req.Password, req.Username)
 	if err != nil {
-		if errors.Is(err, domain.ErrInvalidCredentials) || errors.Is(err, domain.ErrUserNotFound) {
-			logger.Warn("login failed: invalid credentials", "username", req.Username, "ip", c.ClientIP())
+		if errors.Is(err, domain.ErrUserNotFound) {
+			logger.Warn("login failed: user not found", "username", req.Username, "ip", c.ClientIP())
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
 			return
+		} else if errors.Is(err, domain.ErrInvalidCredentials) {
+			logger.Warn("login failed: invalid credentials", "username", req.Username, "ip", c.ClientIP())
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid username or password"})
+			
 		}
 		logger.Error("login failed: internal error", 
             "error", err,
